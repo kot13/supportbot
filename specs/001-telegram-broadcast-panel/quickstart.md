@@ -22,17 +22,38 @@ The following configuration values are required (names may vary in implementatio
 - Admin login + password secret (seeded into DB)
 - Telegram bot token (stored in DB via the admin UI once the app is running)
 - Optional: public base URL for webhook mode (if using webhooks locally)
+ - Optional: webhook secret token (if protecting webhook)
 
 ## Setup Steps (high-level)
 
-1. Start PostgreSQL and create an empty database.
-2. Run database migrations to create required tables.
-3. Seed a single admin user (login/password).
-4. Start the web application.
-5. Sign in to the admin panel and set the bot token on the bot settings page.
-6. Add the bot to a Telegram chat and trigger at least one update so the chat appears in the chat list.
-7. Open the broadcast page, select the chat (or all chats), compose a formatted message, and send.
-8. Verify:
+1. Create `.env` from `.env.example` and set `DATABASE_URL`.
+2. Start PostgreSQL and create an empty database.
+3. Run migrations:
+
+```bash
+npm run db:migrate
+```
+
+4. Seed a single admin user:
+
+```bash
+npm run db:seed
+```
+
+5. Start the web application:
+
+```bash
+npm run dev
+```
+
+6. Sign in at `/login` using the seeded credentials.
+7. Open `/bot` and save the Telegram bot token.
+8. Add the bot to a Telegram chat and trigger an update:
+   - Either configure webhook to `/api/telegram/webhook` (recommended for prod-like setups)
+   - Or run the long-polling runner (dev fallback) to ingest updates
+9. Confirm the chat appears on `/chats`.
+10. Open `/broadcast`, select the chat (or all chats), compose a formatted message, and send.
+11. Verify:
    - The message is delivered in Telegram.
    - The broadcast appears in history with per-chat delivery results.
 
