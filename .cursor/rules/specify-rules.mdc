@@ -1,0 +1,35 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# supportbot Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-03-31
+
+## Active Technologies
+
+- TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
+
+## Project Structure
+
+```text
+src/
+tests/
+```
+
+## Commands
+
+npm test && npm run lint
+
+## Code Style
+
+TypeScript (Node.js LTS): Follow standard conventions
+
+## Recent Changes
+
+- 001-telegram-broadcast-panel: Added TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
