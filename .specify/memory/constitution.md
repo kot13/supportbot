@@ -1,50 +1,64 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# supportbot Constitution
+<!-- Конституция проекта: правила, которые важнее любых локальных договорённостей -->
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Next.js App Router — стандарт по умолчанию
+Используем Next.js **App Router** и его модель исполнения:
+- Рендеринг по умолчанию — **Server Components**; Client Components только когда нужны интерактивность/хуки/браузерные API.
+- Данные получаем на сервере (server actions/route handlers/`fetch`) и передаём вниз как props/serialized data.
+- Кэширование и revalidation задаём осознанно (по умолчанию — безопасные значения; нельзя «случайно» закэшировать приватные данные).
+- Навигация, метаданные, ошибки — через стандартные механизмы App Router (`loading.tsx`, `error.tsx`, `not-found.tsx`, `generateMetadata`).
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. TypeScript + качество как договор
+Кодовая база ведётся на TypeScript и держит качество «на рельсах»:
+- `strict: true` и запрет неявных `any`; типы — часть публичного контракта модулей.
+- ESLint + форматирование (единый стиль) обязательны; в PR не допускаются предупреждения, влияющие на корректность/безопасность.
+- Повторяемая логика выносится в модули; запрещены «магические» утилиты без владельца и назначения.
+- Публичные интерфейсы (API, actions, схемы данных) описываются явно и версионируются при изменениях контракта.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Безопасность и приватность данных — не обсуждается
+Проект работает с пользовательскими данными, поэтому:
+- Секреты и ключи **никогда** не попадают в репозиторий; только через окружение/секреты CI/CD.
+- Валидация входных данных обязательна на границе (route handlers / server actions). Любой внешний ввод считается недоверенным.
+- Авторизация/аутентификация проверяется на сервере (не полагаемся на клиент).
+- Ошибки не должны раскрывать PII/секреты; логирование — с редактированием чувствительных полей.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Тестирование по критичности, не по догме
+Тесты — инструмент снижения риска и регрессий:
+- **Unit**: бизнес-правила, преобразования, сложная логика — покрываются прежде всего.
+- **Integration**: API/route handlers, server actions, работа с БД/провайдерами, сериализация/схемы.
+- **E2E**: ключевые пользовательские сценарии (авторизация, создание/обработка обращений, админ-функции).
+- Каждый баг фиксируется тестом/проверкой, предотвращающей повторение (если это экономически оправдано).
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Производительность, доступность, UX — часть функционала
+Мы считаем UX «фичей», а не косметикой:
+- Core Web Vitals: избегаем лишнего JS на клиенте, используем Server Components и streaming где уместно.
+- Изображения/шрифты — через механизмы Next.js; тяжёлые зависимости не тянем в клиент без необходимости.
+- Доступность: семантическая разметка, фокус/клавиатура, контраст, корректные состояния ошибок/пустых данных.
+- Ошибки и пустые состояния должны быть пользовательскими: понятное сообщение, следующий шаг, отсутствие «сломанных» экранов.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Технологические стандарты и архитектура
+- **Структура**: группируем код по доменам/фичам (а не по типам файлов), избегаем «бог-`utils`».
+- **Границы**: UI не знает о секретах/токенах; доступ к внешним сервисам — через серверные адаптеры.
+- **Состояние**: сервер — источник истины; клиентское состояние минимально и локально (формы/интеракции).
+- **Работа с данными**: единый слой доступа (репозитории/клиенты), единые схемы и маппинг ошибок.
+- **Конфигурация**: все переменные окружения документированы и валидируются при старте.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Процесс разработки и quality gates
+- **PR-правило**: никаких «поправлю потом». PR должен быть маленьким, проверяемым и с понятной мотивацией.
+- **Определение готовности**:
+  - функциональность работает в целевом окружении,
+  - добавлены/обновлены тесты по уровню риска,
+  - нет деградации производительности/доступности,
+  - нет утечек секретов/PII в код/логи.
+- **Совместимость**: изменения контрактов API и схем данных требуют миграционного плана и обратной совместимости там, где возможно.
+- **Наблюдаемость**: ошибки должны быть воспроизводимы по логам/трейсам; события логируются структурированно и без чувствительных данных.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+Эта конституция имеет приоритет над локальными соглашениями, задачами и «быстрыми» решениями.
+- Любое изменение правил оформляется PR’ом с причиной, последствиями, планом миграции и датой.
+- Любой PR/review обязан проверять соответствие Core Principles; несоответствия должны быть устранены или явно обоснованы.
+- Если требование конфликтует с реальностью проекта — меняем конституцию, а не игнорируем её.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-03-31 | **Last Amended**: 2026-03-31
