@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/src/ui/Alert";
 import { Button } from "@/src/ui/Button";
 import { Input } from "@/src/ui/Input";
+import { Loading } from "@/src/ui/Loading";
 
 type BotSettingsResponse =
   | { ok: true; data: { botName: string | null; tokenSet: boolean } }
@@ -79,7 +80,7 @@ export function BotSettingsForm() {
   }
 
   if (loading) {
-    return <div className="text-sm text-zinc-400">Loading…</div>;
+    return <Loading label="Loading bot settings…" />;
   }
 
   return (
@@ -87,26 +88,24 @@ export function BotSettingsForm() {
       {error ? <Alert title="Error" message={error} /> : null}
       {saved ? <Alert title="Saved" message="Bot settings updated." /> : null}
 
-      <div className="space-y-1">
-        <label className="text-sm text-zinc-300">Bot name</label>
-        <Input value={botName} onChange={(e) => setBotName(e.target.value)} placeholder="supportbot" />
-      </div>
+      <Input
+        label="Bot name"
+        value={botName}
+        onChange={(e) => setBotName(e.target.value)}
+        placeholder="supportbot"
+      />
 
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-zinc-300">Bot token</label>
-          <span className="text-xs text-zinc-500">{tokenSet ? "set" : "not set"}</span>
-        </div>
-        <Input
-          value={botToken}
-          onChange={(e) => setBotToken(e.target.value)}
-          placeholder={tokenPlaceholder}
-          type="password"
-        />
-        <div className="text-xs text-zinc-500">
-          The token is never shown after saving. Enter a new token to rotate it.
-        </div>
-      </div>
+      <Input
+        label="Bot token"
+        value={botToken}
+        onChange={(e) => setBotToken(e.target.value)}
+        placeholder={tokenPlaceholder}
+        type="password"
+        description="The token is never shown after saving. Enter a new token to rotate it."
+        endContent={
+          <span className="text-xs opacity-70">{tokenSet ? "set" : "not set"}</span>
+        }
+      />
 
       <Button onClick={save} disabled={saving}>
         {saving ? "Saving…" : "Save"}

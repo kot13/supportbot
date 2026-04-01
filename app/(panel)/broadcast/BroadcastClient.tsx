@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { Card, CardContent, Link } from "@heroui/react";
 import { Alert } from "@/src/ui/Alert";
 import { Button } from "@/src/ui/Button";
 import { ChatPicker } from "@/src/ui/ChatPicker";
@@ -69,29 +70,33 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
       {error ? <Alert title="Error" message={error} /> : null}
       {summary ? <Alert title="Sent" message={summary} /> : null}
 
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Recipients</div>
-        <ChatPicker
-          chats={chats}
-          mode={mode}
-          onModeChange={setMode}
-          selectedIds={selectedIds}
-          onSelectedIdsChange={setSelectedIds}
-        />
-      </div>
+      <Card className="rounded-md border border-zinc-800 bg-zinc-950/40">
+        <CardContent className="space-y-3">
+          <div className="text-sm font-medium">Recipients</div>
+          <ChatPicker
+            chats={chats}
+            mode={mode}
+            onModeChange={setMode}
+            selectedIds={selectedIds}
+            onSelectedIdsChange={setSelectedIds}
+          />
+        </CardContent>
+      </Card>
 
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Message</div>
-        <MessageEditor value={content} onChange={setContent} />
-      </div>
+      <Card className="rounded-md border border-zinc-800 bg-zinc-950/40">
+        <CardContent className="space-y-3">
+          <div className="text-sm font-medium">Message</div>
+          <MessageEditor value={content} onChange={setContent} />
+        </CardContent>
+      </Card>
 
       <div className="flex items-center gap-3">
         <Button onClick={send} disabled={!canSend || pending}>
           {pending ? "Sending…" : "Send broadcast"}
         </Button>
-        <a className="text-sm text-zinc-300 hover:underline" href="/broadcast/history">
+        <Link className="text-sm" href="/broadcast/history">
           View history
-        </a>
+        </Link>
       </div>
     </div>
   );
