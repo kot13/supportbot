@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { DataTable, type DataTableColumn } from "@/src/ui/Table";
 
 type Row = {
@@ -8,7 +10,7 @@ type Row = {
   recipients_total: number;
   success_count: number;
   failure_count: number;
-  content_preview: string;
+  error_code_summary: string | null;
   attachments_count: number;
 };
 
@@ -20,7 +22,7 @@ const columns: Array<
     | "success_count"
     | "failure_count"
     | "attachments_count"
-    | "content_preview"
+    | "error_code_summary"
   >
 > = [
   { key: "id", label: "ID" },
@@ -29,7 +31,7 @@ const columns: Array<
   { key: "success_count", label: "Success" },
   { key: "failure_count", label: "Failed" },
   { key: "attachments_count", label: "Images" },
-  { key: "content_preview", label: "Preview" },
+  { key: "error_code_summary", label: "Error code" },
 ];
 
 export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
@@ -44,9 +46,12 @@ export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
           switch (k) {
             case "id":
               return (
-                <a className="text-indigo-300 hover:underline" href={`/api/broadcasts/${r.id}`}>
+                <Link
+                  className="text-indigo-600 hover:underline"
+                  href={`/broadcast/history/${r.id}`}
+                >
                   #{r.id}
-                </a>
+                </Link>
               );
             case "status":
               return r.status;
@@ -58,8 +63,12 @@ export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
               return r.failure_count;
             case "attachments_count":
               return r.attachments_count ? `+${r.attachments_count}` : "-";
-            case "content_preview":
-              return <span className="opacity-80">{r.content_preview}</span>;
+            case "error_code_summary":
+              return (
+                <span className="font-mono text-xs opacity-90">
+                  {r.error_code_summary ?? "-"}
+                </span>
+              );
             default:
               return "-";
           }
@@ -68,4 +77,3 @@ export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
     </div>
   );
 }
-

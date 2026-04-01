@@ -15,17 +15,12 @@ export default async function BroadcastHistoryPage() {
           <h1 className="text-xl font-semibold">Broadcast history</h1>
           <p className="text-sm text-zinc-400">Recent broadcasts and outcomes.</p>
         </div>
-        <Link className="text-sm text-indigo-300 hover:underline" href="/broadcast">
+        <Link className="text-sm text-indigo-600 hover:underline" href="/broadcast">
           Back to composer
         </Link>
       </div>
 
       <BroadcastHistoryTable rows={rows} />
-
-      <div className="text-xs text-zinc-500">
-        Tip: open any item via the API link to see per-chat results (UI details page can be added next).
-      </div>
     </div>
   );
 }
-

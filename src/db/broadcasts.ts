@@ -17,7 +17,8 @@ export type BroadcastListRow = {
   created_at: Date;
   sent_at: Date | null;
   status: string;
-  content_preview: string;
+  /** Distinct non-null error codes from failed deliveries, comma-separated; null if none. */
+  error_code_summary: string | null;
   recipients_total: number;
   success_count: number;
   failure_count: number;
@@ -89,7 +90,16 @@ export async function listBroadcasts(pool: Pool = getPool()): Promise<BroadcastL
         bm.created_at,
         bm.sent_at,
         bm.status,
-        left(bm.content, 120) as content_preview,
+        (
+          select string_agg(sub.code, ', ' order by sub.code)
+          from (
+            select distinct dr.error_code::text as code
+            from delivery_results dr
+            where dr.broadcast_message_id = bm.id
+              and dr.status = 'failure'
+              and dr.error_code is not null
+          ) sub
+        ) as error_code_summary,
         (select count(*)::int from broadcast_recipients br where br.broadcast_message_id = bm.id) as recipients_total,
         (select count(*)::int from delivery_results dr where dr.broadcast_message_id = bm.id and dr.status = 'success') as success_count,
         (select count(*)::int from delivery_results dr where dr.broadcast_message_id = bm.id and dr.status = 'failure') as failure_count,
