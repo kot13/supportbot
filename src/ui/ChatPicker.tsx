@@ -54,11 +54,11 @@ export function ChatPicker({
       </div>
 
       {mode === "subset" ? (
-        <div className="max-h-56 overflow-auto rounded-md border border-zinc-800 bg-zinc-950/40">
+        <div className="max-h-56 overflow-auto rounded-md border border-zinc-200 bg-white">
           {activeChats.length === 0 ? (
-            <div className="p-3 text-sm text-zinc-400">No active chats</div>
+            <div className="p-3 text-sm text-zinc-500">No active chats</div>
           ) : (
-            <ul className="divide-y divide-zinc-900">
+            <ul className="divide-y divide-zinc-100">
               {activeChats.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 p-3">
                   <input

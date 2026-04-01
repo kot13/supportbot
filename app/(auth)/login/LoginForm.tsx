@@ -41,11 +41,11 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className="text-sm text-zinc-300">Login</label>
+        <label className="text-sm text-zinc-700">Login</label>
         <Input name="login" autoComplete="username" required />
       </div>
       <div className="space-y-1">
-        <label className="text-sm text-zinc-300">Password</label>
+        <label className="text-sm text-zinc-700">Password</label>
         <Input name="password" type="password" autoComplete="current-password" required />
       </div>
 

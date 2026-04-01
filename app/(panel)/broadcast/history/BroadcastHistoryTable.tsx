@@ -34,7 +34,7 @@ const columns: Array<
 
 export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
   return (
-    <div className="overflow-hidden rounded-md border border-zinc-800">
+    <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
       <DataTable
         columns={columns}
         rows={rows}
