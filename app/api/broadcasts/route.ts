@@ -118,6 +118,25 @@ export async function POST(request: Request) {
       );
     }
 
+    {
+      const maxLen = images.length > 0 ? 1024 : 2048;
+      if (content.length > maxLen) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: {
+              message:
+                images.length > 0
+                  ? "Message is too long for an image caption (max 1024 characters)"
+                  : "Message is too long (max 2048 characters)",
+              code: "VALIDATION",
+            },
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     if (targetMode === "subset" && chatIds.length === 0) {
       return NextResponse.json(
         { ok: false, error: { message: "Select at least one chat", code: "VALIDATION" } },

@@ -22,7 +22,7 @@ const columns: Array<DataTableColumn<"title" | "telegram_chat_id" | "type" | "is
 
 export function ChatsTable({ chats }: { chats: ChatRow[] }) {
   return (
-    <div className="overflow-hidden rounded-md border border-zinc-800">
+    <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
       <DataTable
         columns={columns}
         rows={chats}

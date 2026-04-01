@@ -8,7 +8,14 @@ export function toAdminFriendlyTelegramError(result: TelegramSendResult): {
     return { errorMessage: "" };
   }
 
-  const msg = (result.errorMessage || "Telegram error").slice(0, 500);
+  const raw = result.errorMessage || "Telegram error";
+  const lower = raw.toLowerCase();
+  const normalized =
+    lower.includes("caption") && (lower.includes("too long") || lower.includes("is too long"))
+      ? "Telegram rejected the caption as too long. Reduce message length or send without images."
+      : raw;
+
+  const msg = normalized.slice(0, 500);
   const code = result.errorCode?.slice(0, 64);
 
   return {

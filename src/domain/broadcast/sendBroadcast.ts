@@ -45,6 +45,15 @@ export async function sendBroadcast(input: {
   }
 
   const images = input.images ?? [];
+  const maxLen = images.length > 0 ? 1024 : 2048;
+  if (input.content.length > maxLen) {
+    const msg =
+      images.length > 0
+        ? "Message is too long for an image caption (max 1024 characters)"
+        : "Message is too long (max 2048 characters)";
+    throw new AppError(msg, { code: "VALIDATION", status: 400 });
+  }
+
   const v = validateBroadcastImages({
     content: input.content,
     images: images.map((img) => ({ mimeType: img.mimeType })),

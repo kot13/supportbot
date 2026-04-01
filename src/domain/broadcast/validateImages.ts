@@ -1,5 +1,7 @@
 export type BroadcastImageLike = { mimeType: string };
 
+const MAX_BROADCAST_CAPTION_LENGTH = 1024;
+
 export type BroadcastImagesValidationResult =
   | { ok: true }
   | { ok: false; code: "VALIDATION"; message: string };
@@ -20,13 +22,11 @@ export function validateBroadcastImages(input: {
     return { ok: false, code: "VALIDATION", message: "Only image files are allowed" };
   }
 
-  // Telegram caption limit is 0-1024 characters after entities parsing.
-  // Apply a strict hard limit to avoid partial delivery attempts.
-  if (input.content.length > 1024) {
+  if (input.content.length > MAX_BROADCAST_CAPTION_LENGTH) {
     return {
       ok: false,
       code: "VALIDATION",
-      message: "Message is too long for an image caption (max 1024 characters)",
+      message: `Message is too long for an image caption (max ${MAX_BROADCAST_CAPTION_LENGTH} characters)`,
     };
   }
 

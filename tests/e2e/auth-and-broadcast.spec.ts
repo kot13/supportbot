@@ -27,3 +27,36 @@ test("sign out invalidates session and protects /bot", async ({ page }) => {
   await page.waitForURL("/login");
 });
 
+test("root redirects to /chats after sign-in", async ({ page }) => {
+  const login = process.env.ADMIN_LOGIN ?? "admin";
+  const password = process.env.ADMIN_PASSWORD ?? "change-me";
+
+  await page.goto("/login");
+  await page.getByLabel("Login").fill(login);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.goto("/");
+  await page.waitForURL("/chats");
+});
+
+test("broadcast preview preserves line breaks", async ({ page }) => {
+  const login = process.env.ADMIN_LOGIN ?? "admin";
+  const password = process.env.ADMIN_PASSWORD ?? "change-me";
+
+  await page.goto("/login");
+  await page.getByLabel("Login").fill(login);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.goto("/broadcast");
+
+  const text = "line 1\n\nline 3";
+  await page.getByTestId("message-textarea").fill(text);
+
+  const previewText = await page.getByTestId("message-preview").innerText();
+  expect(previewText).toContain("line 1");
+  expect(previewText).toContain("line 3");
+  expect(previewText).toContain("\n\n");
+});
+

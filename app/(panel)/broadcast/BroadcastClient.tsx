@@ -24,11 +24,14 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
 
+  const maxLen = images.length > 0 ? 1024 : 2048;
+
   const canSend = useMemo(() => {
     if (!content.trim()) return false;
+    if (content.length > maxLen) return false;
     if (mode === "subset" && selectedIds.length === 0) return false;
     return true;
-  }, [content, mode, selectedIds]);
+  }, [content, maxLen, mode, selectedIds]);
 
   function removeImage(idx: number) {
     setImages(images.filter((_, i) => i !== idx));
@@ -108,7 +111,7 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
       {error ? <Alert title="Error" message={error} /> : null}
       {summary ? <Alert title="Sent" message={summary} /> : null}
 
-      <Card className="rounded-md border border-zinc-800 bg-zinc-950/40">
+      <Card className="rounded-md border border-zinc-200 bg-white">
         <CardContent className="space-y-3">
           <div className="text-sm font-medium">Recipients</div>
           <ChatPicker
@@ -121,10 +124,20 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
         </CardContent>
       </Card>
 
-      <Card className="rounded-md border border-zinc-800 bg-zinc-950/40">
+      <Card className="rounded-md border border-zinc-200 bg-white">
         <CardContent className="space-y-3">
           <div className="text-sm font-medium">Message</div>
-          <MessageEditor value={content} onChange={setContent} />
+          <MessageEditor value={content} onChange={setContent} maxLength={maxLen} />
+          {content.length > maxLen ? (
+            <Alert
+              title="Error"
+              message={
+                images.length > 0
+                  ? "Message is too long for an image caption (max 1024 characters)."
+                  : "Message is too long (max 2048 characters)."
+              }
+            />
+          ) : null}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
@@ -144,7 +157,7 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
                 {images.map((f, idx) => (
                   <div
                     key={`${f.name}-${idx}`}
-                    className="flex items-center justify-between gap-3 rounded-md border border-zinc-800 bg-zinc-950/40 px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm"
                   >
                     <div className="min-w-0 truncate">{f.name}</div>
                     <Button variant="secondary" onClick={() => removeImage(idx)} disabled={pending}>
