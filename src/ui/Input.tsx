@@ -1,10 +1,34 @@
-import type { InputHTMLAttributes } from "react";
+"use client";
 
-type Props = InputHTMLAttributes<HTMLInputElement>;
+import { Input as HeroInput, type InputProps as HeroInputProps } from "@heroui/react";
 
-export function Input({ className, ...props }: Props) {
-  const base =
-    "w-full rounded-md bg-zinc-950/40 px-3 py-2 text-sm text-zinc-100 ring-1 ring-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-400";
-  return <input className={[base, className].filter(Boolean).join(" ")} {...props} />;
+type Props = HeroInputProps;
+
+export function Input({
+  className,
+  label,
+  description,
+  endContent,
+  variant,
+  ...props
+}: Props & {
+  label?: string;
+  description?: string;
+  endContent?: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      {label ? <div className="text-sm opacity-80">{label}</div> : null}
+      <div className="flex items-center gap-3">
+        <HeroInput
+          variant={variant ?? "primary"}
+          className={["w-full", className].filter(Boolean).join(" ")}
+          {...props}
+        />
+        {endContent ? <div className="shrink-0">{endContent}</div> : null}
+      </div>
+      {description ? <div className="text-xs opacity-70">{description}</div> : null}
+    </div>
+  );
 }
 

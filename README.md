@@ -62,3 +62,31 @@ npm run dev
 - Can send a broadcast and see a success/failure summary.
 - Can view the broadcast record in history with per-chat outcomes.
 
+## UI kit / design system usage
+
+This project uses **HeroUI** (`@heroui/react` + `@heroui/styles`). Please prefer the shared wrappers in `src/ui/` over ad-hoc Tailwind styling.
+
+- **Buttons**: use `src/ui/Button.tsx` (`variant="primary" | "secondary"`). Use `disabled` (mapped to HeroUI `isDisabled`).
+- **Inputs**: use `src/ui/Input.tsx`. For simple cases prefer `label`, `description`, `endContent` props (wrapper-level), and native `onChange` for state updates.
+- **Alerts / messages**: use `src/ui/Alert.tsx`.
+- **Tables**: use `src/ui/Table.tsx` (`DataTable`) for consistent header/row/empty state styling.
+- **Loading state**: use `src/ui/Loading.tsx`.
+
+## E2E tests (Playwright)
+
+Playwright requires browser binaries installed locally:
+
+```bash
+npx playwright install
+```
+
+Run e2e tests (expects the app is running at `E2E_BASE_URL` (default `http://localhost:3000`) and DB is migrated + seeded):
+
+```bash
+npm run test:e2e
+```
+
+Credentials used by the smoke tests:
+- `ADMIN_LOGIN` (default `admin`)
+- `ADMIN_PASSWORD` (default `change-me`)
+
