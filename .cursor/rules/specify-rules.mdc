@@ -14,6 +14,7 @@ Auto-generated from all feature plans. Last updated: 2026-04-01
 - TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI, `pg` (003-broadcast-images)
 - PostgreSQL (existing) (004-ui-polish)
 - PostgreSQL (existing `broadcast_messages`, `delivery_results`, `broadcast_recipients`, `chats`) (005-chats-history-improvements)
+- TypeScript (Node.js 20+) + Next.js (App Router), Telegram Bot API (`getUpdates`, `setWebhook`, updates JSON), `pg`; PostgreSQL `chats` + bot settings webhook UI (006-chat-management)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -33,9 +34,7 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
-- 005-chats-history-improvements: Added TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI, `pg`
-- 004-ui-polish: Added TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI
-- 003-broadcast-images: Added TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI, `pg`
+- 006-chat-management: Chat lifecycle (`is_active` from updates), manual webhook URL + `setWebhook` from `/bot`, contracts in `specs/006-chat-management/`
 
 
 <!-- MANUAL ADDITIONS START -->

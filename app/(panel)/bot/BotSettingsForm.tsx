@@ -11,6 +11,10 @@ type BotSettingsResponse =
   | { ok: true; data: { botName: string | null; tokenSet: boolean } }
   | { ok: false; error: { message: string } };
 
+type WebhookRegisterResponse =
+  | { ok: true; data: { registered: boolean } }
+  | { ok: false; error: { message: string; code?: string } };
+
 export function BotSettingsForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -19,6 +23,11 @@ export function BotSettingsForm() {
   const [botToken, setBotToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [registeringWebhook, setRegisteringWebhook] = useState(false);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
+  const [webhookRegistered, setWebhookRegistered] = useState(false);
 
   const tokenPlaceholder = useMemo(() => {
     return tokenSet ? "Token is set (enter a new token to rotate)" : "Enter bot token";
@@ -79,6 +88,29 @@ export function BotSettingsForm() {
     }
   }
 
+  async function registerWebhook() {
+    setWebhookRegistered(false);
+    setWebhookError(null);
+    setRegisteringWebhook(true);
+    try {
+      const res = await fetch("/api/bot-settings/webhook", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: webhookUrl.trim() }),
+      });
+      const json = (await res.json()) as WebhookRegisterResponse;
+      if (!res.ok || !json.ok) {
+        setWebhookError(!json.ok ? json.error.message : "Failed to register webhook");
+        return;
+      }
+      setWebhookRegistered(true);
+    } catch {
+      setWebhookError("Failed to register webhook");
+    } finally {
+      setRegisteringWebhook(false);
+    }
+  }
+
   if (loading) {
     return <Loading label="Loading bot settings…" />;
   }
@@ -110,6 +142,28 @@ export function BotSettingsForm() {
       <Button onClick={save} disabled={saving}>
         {saving ? "Saving…" : "Save"}
       </Button>
+
+      <div className="border-t border-default-200 pt-4 space-y-3">
+        <h2 className="text-sm font-semibold text-default-700">Telegram webhook</h2>
+        <p className="text-sm text-default-600">
+          Enter the full public HTTPS URL Telegram should call (for example your app&apos;s{" "}
+          <code className="rounded bg-default-100 px-1 py-0.5 text-xs">/api/telegram/webhook</code>
+          ). Save the bot token above first.
+        </p>
+        {webhookError ? <Alert title="Webhook error" message={webhookError} /> : null}
+        {webhookRegistered ? (
+          <Alert title="Webhook registered" message="Telegram accepted this webhook URL." />
+        ) : null}
+        <Input
+          label="Webhook URL"
+          value={webhookUrl}
+          onChange={(e) => setWebhookUrl(e.target.value)}
+          placeholder="https://your-domain.example/api/telegram/webhook"
+        />
+        <Button onClick={registerWebhook} disabled={registeringWebhook || !webhookUrl.trim()}>
+          {registeringWebhook ? "Registering…" : "Register webhook"}
+        </Button>
+      </div>
     </div>
   );
 }

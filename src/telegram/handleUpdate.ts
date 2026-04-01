@@ -12,15 +12,15 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     telegramChatId: chat.telegramChatId,
     title: chat.title,
     type: chat.type,
-    isActive: true,
+    isActive: chat.isActive,
     lastSeenAt: chat.lastSeenAt,
   });
 
   logger.info("chat_upserted", {
     telegramChatId: chat.telegramChatId,
     type: chat.type,
+    isActive: chat.isActive,
   });
 
   return { ok: true, upserted: true };
 }
-
