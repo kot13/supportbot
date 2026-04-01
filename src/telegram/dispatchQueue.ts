@@ -1,16 +1,17 @@
-import type { TelegramSendInput, TelegramSendResult } from "./send";
+import type { TelegramSendResult } from "./send";
+import type { TelegramBroadcastInput } from "./sendBroadcast";
 
-import { sendTelegramMessage } from "./send";
+import { sendTelegramBroadcast } from "./sendBroadcast";
 
 export async function dispatchQueue(
-  inputs: TelegramSendInput[],
+  inputs: TelegramBroadcastInput[],
   opts?: { concurrency?: number },
 ): Promise<TelegramSendResult[]> {
   // v1: sequential dispatch (safe default). Add concurrency later if needed.
   void opts;
   const out: TelegramSendResult[] = [];
   for (const input of inputs) {
-    out.push(await sendTelegramMessage(input));
+    out.push(await sendTelegramBroadcast(input));
   }
   return out;
 }

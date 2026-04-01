@@ -21,6 +21,7 @@ export type BroadcastListRow = {
   recipients_total: number;
   success_count: number;
   failure_count: number;
+  attachments_count: number;
 };
 
 export async function createBroadcastMessage(
@@ -91,7 +92,8 @@ export async function listBroadcasts(pool: Pool = getPool()): Promise<BroadcastL
         left(bm.content, 120) as content_preview,
         (select count(*)::int from broadcast_recipients br where br.broadcast_message_id = bm.id) as recipients_total,
         (select count(*)::int from delivery_results dr where dr.broadcast_message_id = bm.id and dr.status = 'success') as success_count,
-        (select count(*)::int from delivery_results dr where dr.broadcast_message_id = bm.id and dr.status = 'failure') as failure_count
+        (select count(*)::int from delivery_results dr where dr.broadcast_message_id = bm.id and dr.status = 'failure') as failure_count,
+        (select count(*)::int from broadcast_attachments ba where ba.broadcast_message_id = bm.id) as attachments_count
       from broadcast_messages bm
       order by bm.id desc
       limit 100
@@ -108,6 +110,7 @@ export type BroadcastDetailsRow = {
   created_at: Date;
   sent_at: Date | null;
   status: string;
+  attachments_count: number;
 };
 
 export type BroadcastDeliveryRow = {
@@ -126,7 +129,19 @@ export async function getBroadcastDetails(
   pool: Pool = getPool(),
 ): Promise<{ broadcast: BroadcastDetailsRow | null; deliveries: BroadcastDeliveryRow[] }> {
   const b = await pool.query<BroadcastDetailsRow>(
-    "select id, content, format, target_mode, created_at, sent_at, status from broadcast_messages where id = $1",
+    `
+      select
+        bm.id,
+        bm.content,
+        bm.format,
+        bm.target_mode,
+        bm.created_at,
+        bm.sent_at,
+        bm.status,
+        (select count(*)::int from broadcast_attachments ba where ba.broadcast_message_id = bm.id) as attachments_count
+      from broadcast_messages bm
+      where bm.id = $1
+    `,
     [id],
   );
 

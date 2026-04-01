@@ -9,11 +9,18 @@ type Row = {
   success_count: number;
   failure_count: number;
   content_preview: string;
+  attachments_count: number;
 };
 
 const columns: Array<
   DataTableColumn<
-    "id" | "status" | "recipients_total" | "success_count" | "failure_count" | "content_preview"
+    | "id"
+    | "status"
+    | "recipients_total"
+    | "success_count"
+    | "failure_count"
+    | "attachments_count"
+    | "content_preview"
   >
 > = [
   { key: "id", label: "ID" },
@@ -21,6 +28,7 @@ const columns: Array<
   { key: "recipients_total", label: "Recipients" },
   { key: "success_count", label: "Success" },
   { key: "failure_count", label: "Failed" },
+  { key: "attachments_count", label: "Images" },
   { key: "content_preview", label: "Preview" },
 ];
 
@@ -48,6 +56,8 @@ export function BroadcastHistoryTable({ rows }: { rows: Row[] }) {
               return r.success_count;
             case "failure_count":
               return r.failure_count;
+            case "attachments_count":
+              return r.attachments_count ? `+${r.attachments_count}` : "-";
             case "content_preview":
               return <span className="opacity-80">{r.content_preview}</span>;
             default:
