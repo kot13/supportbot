@@ -6,11 +6,12 @@ alwaysApply: true
 
 # supportbot Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-31
+Auto-generated from all feature plans. Last updated: 2026-04-01
 
 ## Active Technologies
 - TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS, UI kit (React Hero UI or equivalent) (002-ui-navigation)
 - PostgreSQL (002-ui-navigation)
+- TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI, `pg` (003-broadcast-images)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -30,6 +31,7 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 003-broadcast-images: Added TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS + HeroUI, `pg`
 - 002-ui-navigation: Added TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS, UI kit (React Hero UI or equivalent)
 
 - 001-telegram-broadcast-panel: Added TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives

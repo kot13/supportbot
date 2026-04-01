@@ -2,6 +2,19 @@ type LogLevel = "debug" | "info" | "warn" | "error";
 
 function redact(value: unknown): unknown {
   if (value && typeof value === "object") {
+    // Avoid accidentally logging raw binary/file-like values (e.g. multipart uploads).
+    if (value instanceof ArrayBuffer) return "[REDACTED_BINARY]";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const maybeTypedArray = value as any;
+    if (typeof maybeTypedArray?.byteLength === "number" && typeof maybeTypedArray?.buffer === "object") {
+      return "[REDACTED_BINARY]";
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const maybeFile = value as any;
+    if (typeof maybeFile?.arrayBuffer === "function" && typeof maybeFile?.name === "string") {
+      return "[REDACTED_FILE]";
+    }
+
     const obj = value as Record<string, unknown>;
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj)) {
