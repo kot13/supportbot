@@ -6,7 +6,7 @@ alwaysApply: true
 
 # supportbot Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-01
+Auto-generated from all feature plans. Last updated: 2026-04-29
 
 ## Active Technologies
 - TypeScript (Node.js 20+) + Next.js (App Router), Tailwind CSS, UI kit (React Hero UI or equivalent) (002-ui-navigation)
@@ -15,6 +15,8 @@ Auto-generated from all feature plans. Last updated: 2026-04-01
 - PostgreSQL (existing) (004-ui-polish)
 - PostgreSQL (existing `broadcast_messages`, `delivery_results`, `broadcast_recipients`, `chats`) (005-chats-history-improvements)
 - TypeScript (Node.js 20+) + Next.js (App Router), Telegram Bot API (`getUpdates`, `setWebhook`, updates JSON), `pg`; PostgreSQL `chats` + bot settings webhook UI (006-chat-management)
+- TypeScript (Node.js 20+) + Next.js (App Router), React, `@heroui/react` (Card, Modal и др.), существующий `POST /api/broadcasts` (007-send-confirmation)
+- N/A для фичи — без новых таблиц и миграций (007-send-confirmation)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -34,6 +36,7 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 007-send-confirmation: Added TypeScript (Node.js 20+) + Next.js (App Router), React, `@heroui/react` (Card, Modal и др.), существующий `POST /api/broadcasts`
 - 006-chat-management: Chat lifecycle (`is_active` from updates), manual webhook URL + `setWebhook` from `/bot`, contracts in `specs/006-chat-management/`
 
 

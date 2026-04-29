@@ -60,6 +60,31 @@ test("broadcast preview preserves line breaks", async ({ page }) => {
   expect(previewText).toContain("\n\n");
 });
 
+test("broadcast send opens confirmation and cancel keeps draft", async ({ page }) => {
+  const login = process.env.ADMIN_LOGIN ?? "admin";
+  const password = process.env.ADMIN_PASSWORD ?? "change-me";
+
+  await page.goto("/login");
+  await page.getByLabel("Login").fill(login);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.goto("/broadcast");
+
+  const text = "draft kept after cancel";
+  await page.getByTestId("message-textarea").fill(text);
+
+  await page.getByRole("button", { name: "Send broadcast" }).click();
+  const dialog = page.getByTestId("broadcast-confirm-dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: "Confirm broadcast" })).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByTestId("broadcast-confirm-dialog")).toBeHidden();
+
+  await expect(page.getByTestId("message-textarea")).toHaveValue(text);
+});
+
 test("broadcast history ID links to in-panel details page", async ({ page }) => {
   const login = process.env.ADMIN_LOGIN ?? "admin";
   const password = process.env.ADMIN_PASSWORD ?? "change-me";

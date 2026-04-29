@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { Card, CardContent, Link } from "@heroui/react";
+import { Card, CardContent, Link, Modal, useOverlayState } from "@heroui/react";
 import { Alert } from "@/src/ui/Alert";
 import { Button } from "@/src/ui/Button";
+import { truncateBroadcastBody } from "@/src/ui/broadcastConfirmationPreview";
 import { ChatPicker } from "@/src/ui/ChatPicker";
 import { MessageEditor } from "@/src/ui/MessageEditor";
 
@@ -15,6 +16,8 @@ type Chat = {
   isActive: boolean;
 };
 
+const PREVIEW_MAX_CHARS = 600;
+
 export function BroadcastClient({ chats }: { chats: Chat[] }) {
   const [mode, setMode] = useState<"all" | "subset">("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -24,6 +27,9 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
 
+  const confirmState = useOverlayState();
+  const { close: closeConfirmModal } = confirmState;
+
   const maxLen = images.length > 0 ? 1024 : 2048;
 
   const canSend = useMemo(() => {
@@ -32,6 +38,12 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
     if (mode === "subset" && selectedIds.length === 0) return false;
     return true;
   }, [content, maxLen, mode, selectedIds]);
+
+  useEffect(() => {
+    if (!canSend) {
+      closeConfirmModal();
+    }
+  }, [canSend, closeConfirmModal]);
 
   function removeImage(idx: number) {
     setImages(images.filter((_, i) => i !== idx));
@@ -55,7 +67,22 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
     setImages(next);
   }
 
-  async function send() {
+  const recipientSummary = useMemo(() => {
+    if (mode === "all") {
+      return `All chats (${chats.length} recipients — matches server broadcast list)`;
+    }
+    const selected = chats.filter((c) => selectedIds.includes(c.id));
+    const titles = selected
+      .slice(0, 5)
+      .map((c) => c.title ?? "Untitled chat")
+      .join(", ");
+    const extra = selected.length > 5 ? ` … +${selected.length - 5} more` : "";
+    return `Selected chats: ${selectedIds.length}${titles ? ` — ${titles}${extra}` : ""}`;
+  }, [chats, mode, selectedIds]);
+
+  const previewParts = useMemo(() => truncateBroadcastBody(content, PREVIEW_MAX_CHARS), [content]);
+
+  async function executeBroadcastSend() {
     setError(null);
     setSummary(null);
     setPending(true);
@@ -104,6 +131,11 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
     } finally {
       setPending(false);
     }
+  }
+
+  async function onConfirmSend() {
+    closeConfirmModal();
+    await executeBroadcastSend();
   }
 
   return (
@@ -172,9 +204,54 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
       </Card>
 
       <div className="flex items-center gap-3">
-        <Button onClick={send} disabled={!canSend || pending}>
-          {pending ? "Sending…" : "Send broadcast"}
-        </Button>
+        <Modal state={confirmState}>
+          <Button type="button" variant="primary" isDisabled={!canSend || pending}>
+            {pending ? "Sending…" : "Send broadcast"}
+          </Button>
+          <Modal.Backdrop isDismissable={!pending}>
+            <Modal.Container placement="center" size="md">
+              <Modal.Dialog
+                aria-labelledby="broadcast-confirm-title"
+                data-testid="broadcast-confirm-dialog"
+                id="broadcast-confirm-dialog"
+              >
+                <Modal.Header>
+                  <Modal.Heading id="broadcast-confirm-title">Confirm broadcast</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body className="space-y-3">
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-700">Recipients: </span>
+                    <span className="text-zinc-600">{recipientSummary}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-700">Images attached: </span>
+                    <span className="text-zinc-600">{images.length}</span>
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm font-medium text-zinc-700">Message preview</div>
+                    <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-zinc-200 bg-zinc-50 p-3 font-sans text-sm text-zinc-800">
+                      {previewParts.preview}
+                    </pre>
+                    {previewParts.truncated ? (
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Showing first {PREVIEW_MAX_CHARS} characters — full length {previewParts.totalChars}{" "}
+                        characters.
+                      </p>
+                    ) : null}
+                  </div>
+                </Modal.Body>
+                <Modal.Footer className="flex flex-wrap justify-end gap-2">
+                  <Button type="button" variant="secondary" isDisabled={pending} onPress={() => confirmState.close()}>
+                    Cancel
+                  </Button>
+                  <Button type="button" variant="primary" isDisabled={pending} onPress={() => void onConfirmSend()}>
+                    {pending ? "Sending…" : "Confirm send"}
+                  </Button>
+                </Modal.Footer>
+              </Modal.Dialog>
+            </Modal.Container>
+          </Modal.Backdrop>
+        </Modal>
         <Link className="text-sm" href="/broadcast/history">
           View history
         </Link>
@@ -182,4 +259,3 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
     </div>
   );
 }
-
