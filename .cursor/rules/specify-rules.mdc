@@ -17,6 +17,8 @@ Auto-generated from all feature plans. Last updated: 2026-04-29
 - TypeScript (Node.js 20+) + Next.js (App Router), Telegram Bot API (`getUpdates`, `setWebhook`, updates JSON), `pg`; PostgreSQL `chats` + bot settings webhook UI (006-chat-management)
 - TypeScript (Node.js 20+) + Next.js (App Router), React, `@heroui/react` (Card, Modal и др.), существующий `POST /api/broadcasts` (007-send-confirmation)
 - N/A для фичи — без новых таблиц и миграций (007-send-confirmation)
+- TypeScript (Node.js 20+) + Next.js (App Router), `@heroui/react`, Telegram Bot API (`sendVideo`, `sendMediaGroup` с видео), `pg` (008-broadcast-video)
+- PostgreSQL — `broadcast_attachments` (расширение использования), `broadcast_messages` без обязательного изменения контракта контента (008-broadcast-video)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -36,6 +38,7 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 008-broadcast-video: Added TypeScript (Node.js 20+) + Next.js (App Router), `@heroui/react`, Telegram Bot API (`sendVideo`, `sendMediaGroup` с видео), `pg`
 - 007-send-confirmation: Added TypeScript (Node.js 20+) + Next.js (App Router), React, `@heroui/react` (Card, Modal и др.), существующий `POST /api/broadcasts`
 - 006-chat-management: Chat lifecycle (`is_active` from updates), manual webhook URL + `setWebhook` from `/bot`, contracts in `specs/006-chat-management/`
 

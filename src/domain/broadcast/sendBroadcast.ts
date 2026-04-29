@@ -8,7 +8,9 @@ import { upsertDeliveryResult } from "@/src/db/deliveryResults";
 import { dispatchQueue } from "@/src/telegram/dispatchQueue";
 import { toAdminFriendlyTelegramError } from "@/src/telegram/errors";
 import type { TelegramImageInput } from "@/src/telegram/sendPhoto";
+import type { TelegramVideoInput } from "@/src/telegram/sendVideo";
 import { validateBroadcastImages } from "./validateImages";
+import { validateBroadcastVideos } from "./validateVideos";
 
 export async function sendBroadcast(input: {
   broadcastMessageId: number;
@@ -17,6 +19,7 @@ export async function sendBroadcast(input: {
   targetMode: "all" | "subset";
   chatIds?: string[];
   images?: TelegramImageInput[];
+  videos?: TelegramVideoInput[];
 }) {
   if (!input.content.trim()) {
     throw new AppError("Message content is required", { code: "VALIDATION", status: 400 });
@@ -45,21 +48,38 @@ export async function sendBroadcast(input: {
   }
 
   const images = input.images ?? [];
-  const maxLen = images.length > 0 ? 1024 : 2048;
+  const videos = input.videos ?? [];
+
+  if (images.length > 0 && videos.length > 0) {
+    throw new AppError(
+      "Cannot attach images and videos in the same broadcast.",
+      { code: "VALIDATION", status: 400 },
+    );
+  }
+
+  const maxLen = images.length > 0 || videos.length > 0 ? 1024 : 2048;
   if (input.content.length > maxLen) {
     const msg =
-      images.length > 0
-        ? "Message is too long for an image caption (max 1024 characters)"
+      images.length > 0 || videos.length > 0
+        ? "Message is too long for a caption with attachments (max 1024 characters)"
         : "Message is too long (max 2048 characters)";
     throw new AppError(msg, { code: "VALIDATION", status: 400 });
   }
 
-  const v = validateBroadcastImages({
+  const vi = validateBroadcastImages({
     content: input.content,
     images: images.map((img) => ({ mimeType: img.mimeType })),
   });
-  if (!v.ok) {
-    throw new AppError(v.message, { code: v.code, status: 400 });
+  if (!vi.ok) {
+    throw new AppError(vi.message, { code: vi.code, status: 400 });
+  }
+
+  const vv = validateBroadcastVideos({
+    content: input.content,
+    videos: videos.map((vid) => ({ mimeType: vid.mimeType, sizeBytes: vid.bytes.byteLength })),
+  });
+  if (!vv.ok) {
+    throw new AppError(vv.message, { code: vv.code, status: 400 });
   }
 
   await addBroadcastRecipients(
@@ -67,21 +87,33 @@ export async function sendBroadcast(input: {
     selected.map((c) => c.id),
   );
 
-  if (images.length > 0) {
-    try {
-      await insertBroadcastAttachments(
-        images.map((img, ordinal) => ({
+  const attachmentRows =
+    images.length > 0
+      ? images.map((img, ordinal) => ({
           broadcastMessageId: input.broadcastMessageId,
           ordinal,
           originalFilename: img.filename,
           mimeType: img.mimeType,
           sizeBytes: img.bytes.byteLength,
           telegramFileId: null,
-        })),
-      );
+        }))
+      : videos.length > 0
+        ? videos.map((vid, ordinal) => ({
+            broadcastMessageId: input.broadcastMessageId,
+            ordinal,
+            originalFilename: vid.filename,
+            mimeType: vid.mimeType,
+            sizeBytes: vid.bytes.byteLength,
+            telegramFileId: null,
+          }))
+        : [];
+
+  if (attachmentRows.length > 0) {
+    try {
+      await insertBroadcastAttachments(attachmentRows);
     } catch {
       throw new AppError(
-        "Database is not migrated for image broadcasts. Run migrations (npm run db:migrate) and retry.",
+        "Database is not migrated for broadcast attachments. Run migrations (npm run db:migrate) and retry.",
         { code: "DB_NOT_MIGRATED", status: 500 },
       );
     }
@@ -94,6 +126,7 @@ export async function sendBroadcast(input: {
     text: input.content,
     parseMode: input.format === "html" ? ("HTML" as const) : undefined,
     images: images.length > 0 ? images : undefined,
+    videos: videos.length > 0 ? videos : undefined,
   }));
 
   const results = await dispatchQueue(queueInputs, { concurrency: 1 });

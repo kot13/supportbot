@@ -6,7 +6,12 @@ import { toPublicError } from "@/src/observability/errors";
 import { logger } from "@/src/observability/logger";
 import { sendBroadcast } from "@/src/domain/broadcast/sendBroadcast";
 import { validateBroadcastImages } from "@/src/domain/broadcast/validateImages";
+import {
+  normalizeVideoMimeType,
+  validateBroadcastVideos,
+} from "@/src/domain/broadcast/validateVideos";
 import type { TelegramImageInput } from "@/src/telegram/sendPhoto";
+import type { TelegramVideoInput } from "@/src/telegram/sendVideo";
 
 function parseChatIdsFromFormData(fd: FormData): string[] | null {
   const all = fd.getAll("chatIds");
@@ -56,6 +61,7 @@ export async function POST(request: Request) {
     let targetMode: "all" | "subset" = "all";
     let chatIds: string[] = [];
     let images: TelegramImageInput[] = [];
+    let videos: TelegramVideoInput[] = [];
 
     if (contentType.startsWith("multipart/form-data")) {
       const fd = await request.formData();
@@ -75,8 +81,49 @@ export async function POST(request: Request) {
         chatIds = parsed;
       }
 
-      const files = fd.getAll("images");
-      const imageFiles = files.filter((f): f is File => typeof f === "object" && f instanceof File);
+      const imageFields = fd.getAll("images");
+      const imageFiles = imageFields.filter((f): f is File => typeof f === "object" && f instanceof File);
+
+      const videoFields = fd.getAll("videos");
+      const videoFiles = videoFields.filter((f): f is File => typeof f === "object" && f instanceof File);
+
+      if (imageFiles.length > 0 && videoFiles.length > 0) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: {
+              message:
+                "Cannot attach images and videos in the same broadcast. Clear one type to use the other.",
+              code: "VALIDATION",
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      if (videoFiles.length > 0) {
+        const vv = validateBroadcastVideos({
+          content,
+          videos: videoFiles.map((f) => ({
+            mimeType: normalizeVideoMimeType({ type: f.type, name: f.name }),
+            sizeBytes: f.size,
+          })),
+        });
+        if (!vv.ok) {
+          return NextResponse.json({ ok: false, error: { message: vv.message, code: vv.code } }, { status: 400 });
+        }
+
+        videos = [];
+        for (const f of videoFiles) {
+          const ab = await f.arrayBuffer();
+          const mimeType = normalizeVideoMimeType({ type: f.type, name: f.name });
+          videos.push({
+            filename: f.name || "video",
+            mimeType,
+            bytes: new Uint8Array(ab),
+          });
+        }
+      }
 
       if (imageFiles.length > 0) {
         const v = validateBroadcastImages({
@@ -84,7 +131,7 @@ export async function POST(request: Request) {
           images: imageFiles.map((f) => ({ mimeType: f.type })),
         });
         if (!v.ok) {
-          return NextResponse.json({ ok: false, error: v }, { status: 400 });
+          return NextResponse.json({ ok: false, error: { message: v.message, code: v.code } }, { status: 400 });
         }
 
         images = [];
@@ -119,16 +166,16 @@ export async function POST(request: Request) {
     }
 
     {
-      const maxLen = images.length > 0 ? 1024 : 2048;
+      const hasMedia = images.length > 0 || videos.length > 0;
+      const maxLen = hasMedia ? 1024 : 2048;
       if (content.length > maxLen) {
         return NextResponse.json(
           {
             ok: false,
             error: {
-              message:
-                images.length > 0
-                  ? "Message is too long for an image caption (max 1024 characters)"
-                  : "Message is too long (max 2048 characters)",
+              message: hasMedia
+                ? "Message is too long for a caption with attachments (max 1024 characters)"
+                : "Message is too long (max 2048 characters)",
               code: "VALIDATION",
             },
           },
@@ -158,6 +205,7 @@ export async function POST(request: Request) {
       targetMode,
       chatIds,
       images: images.length > 0 ? images : undefined,
+      videos: videos.length > 0 ? videos : undefined,
     });
 
     return NextResponse.json({ ok: true, data: { id, summary } }, { status: 200 });

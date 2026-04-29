@@ -1,5 +1,6 @@
 import { getTelegramBotToken } from "./botToken";
 import type { TelegramImageInput } from "./sendPhoto";
+import type { TelegramVideoInput } from "./sendVideo";
 
 export type TelegramSendMediaGroupInput = {
   chatId: string | number;
@@ -86,6 +87,103 @@ export async function sendTelegramMediaGroup(
     const fileIds = (json.result ?? [])
       .flatMap((m) => m.photo ?? [])
       .map((p) => p.file_id)
+      .filter((v): v is string => typeof v === "string");
+
+    return { ok: true, telegramMessageIds: ids, telegramFileIds: fileIds };
+  } catch (err) {
+    if ((err as { name?: string }).name === "AbortError") {
+      return { ok: false, errorCode: "TIMEOUT", errorMessage: "Telegram request timed out" };
+    }
+    return { ok: false, errorCode: "NETWORK_ERROR", errorMessage: "Telegram request failed" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export type TelegramSendVideoMediaGroupInput = {
+  chatId: string | number;
+  videos: TelegramVideoInput[];
+  caption?: string;
+  parseMode?: "HTML" | "MarkdownV2";
+};
+
+export type TelegramSendVideoMediaGroupResult =
+  | { ok: true; telegramMessageIds: number[]; telegramFileIds: string[] }
+  | { ok: false; errorCode?: string; errorMessage: string };
+
+export async function sendTelegramVideoMediaGroup(
+  input: TelegramSendVideoMediaGroupInput,
+): Promise<TelegramSendVideoMediaGroupResult> {
+  const token = await getTelegramBotToken();
+  if (!token) {
+    return { ok: false, errorCode: "BOT_TOKEN_NOT_SET", errorMessage: "Bot token is not set" };
+  }
+
+  if (input.videos.length < 2 || input.videos.length > 10) {
+    return {
+      ok: false,
+      errorCode: "VALIDATION",
+      errorMessage: "Video media group must include 2-10 videos",
+    };
+  }
+
+  const url = `https://api.telegram.org/bot${token}/sendMediaGroup`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+  try {
+    const form = new FormData();
+    form.append("chat_id", String(input.chatId));
+
+    const media = input.videos.map((v, idx) => {
+      const attachName = `vfile${idx}`;
+      const m: Record<string, unknown> = {
+        type: "video",
+        media: `attach://${attachName}`,
+      };
+      if (idx === 0 && input.caption) {
+        m.caption = input.caption;
+        if (input.parseMode) m.parse_mode = input.parseMode;
+      }
+      return m;
+    });
+
+    form.append("media", JSON.stringify(media));
+
+    input.videos.forEach((v, idx) => {
+      const blob = new Blob([v.bytes.buffer as ArrayBuffer], { type: v.mimeType });
+      form.append(`vfile${idx}`, blob, v.filename);
+    });
+
+    const res = await fetch(url, { method: "POST", body: form, signal: controller.signal });
+    const json = (await res.json().catch(() => null)) as
+      | {
+          ok: true;
+          result?: Array<{
+            message_id?: number;
+            video?: { file_id?: string };
+          }>;
+        }
+      | { ok: false; error_code?: number; description?: string }
+      | null;
+
+    if (!res.ok || !json || json.ok !== true) {
+      const errCode =
+        json && json.ok === false && typeof json.error_code === "number"
+          ? String(json.error_code)
+          : String(res.status);
+      const errMsg =
+        json && json.ok === false && typeof json.description === "string"
+          ? json.description
+          : "Telegram sendMediaGroup (video) failed";
+      return { ok: false, errorCode: errCode, errorMessage: errMsg };
+    }
+
+    const ids = (json.result ?? [])
+      .map((m) => m.message_id)
+      .filter((v): v is number => typeof v === "number");
+    const fileIds = (json.result ?? [])
+      .map((m) => m.video?.file_id)
       .filter((v): v is string => typeof v === "string");
 
     return { ok: true, telegramMessageIds: ids, telegramFileIds: fileIds };

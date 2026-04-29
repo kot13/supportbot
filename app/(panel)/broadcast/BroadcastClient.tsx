@@ -6,6 +6,15 @@ import { Card, CardContent, Link, Modal, useOverlayState } from "@heroui/react";
 import { Alert } from "@/src/ui/Alert";
 import { Button } from "@/src/ui/Button";
 import { truncateBroadcastBody } from "@/src/ui/broadcastConfirmationPreview";
+import {
+  BROADCAST_VIDEO_MAX_COUNT,
+  BROADCAST_VIDEO_MAX_FILE_BYTES,
+  MSG_VIDEO_COUNT,
+  MSG_VIDEO_SIZE,
+  MSG_VIDEO_TYPE,
+  isAllowedVideoMimeType,
+  normalizeVideoMimeType,
+} from "@/src/domain/broadcast/validateVideos";
 import { ChatPicker } from "@/src/ui/ChatPicker";
 import { MessageEditor } from "@/src/ui/MessageEditor";
 
@@ -23,6 +32,7 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [content, setContent] = useState<string>("");
   const [images, setImages] = useState<File[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
@@ -30,7 +40,8 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
   const confirmState = useOverlayState();
   const { close: closeConfirmModal } = confirmState;
 
-  const maxLen = images.length > 0 ? 1024 : 2048;
+  const hasMedia = images.length > 0 || videos.length > 0;
+  const maxLen = hasMedia ? 1024 : 2048;
 
   const canSend = useMemo(() => {
     if (!content.trim()) return false;
@@ -49,10 +60,15 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
     setImages(images.filter((_, i) => i !== idx));
   }
 
+  function removeVideo(idx: number) {
+    setVideos(videos.filter((_, i) => i !== idx));
+  }
+
   function onPickImages(files: FileList | null) {
     if (!files) return;
     setError(null);
     const next = [...images];
+    setVideos([]);
     for (const f of Array.from(files)) {
       if (!f.type.startsWith("image/")) {
         setError("Only image files are allowed.");
@@ -65,6 +81,30 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
       next.push(f);
     }
     setImages(next);
+  }
+
+  function onPickVideos(files: FileList | null) {
+    if (!files) return;
+    setError(null);
+    const next = [...videos];
+    setImages([]);
+    for (const f of Array.from(files)) {
+      const mime = normalizeVideoMimeType({ type: f.type, name: f.name });
+      if (!isAllowedVideoMimeType(mime)) {
+        setError(MSG_VIDEO_TYPE);
+        continue;
+      }
+      if (f.size > BROADCAST_VIDEO_MAX_FILE_BYTES) {
+        setError(MSG_VIDEO_SIZE);
+        continue;
+      }
+      if (next.length >= BROADCAST_VIDEO_MAX_COUNT) {
+        setError(MSG_VIDEO_COUNT);
+        break;
+      }
+      next.push(f);
+    }
+    setVideos(next);
   }
 
   const recipientSummary = useMemo(() => {
@@ -82,13 +122,19 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
 
   const previewParts = useMemo(() => truncateBroadcastBody(content, PREVIEW_MAX_CHARS), [content]);
 
+  const captionTooLongMessage = hasMedia
+    ? "Message is too long for a caption with attachments (max 1024 characters)."
+    : "Message is too long (max 2048 characters).";
+
   async function executeBroadcastSend() {
     setError(null);
     setSummary(null);
     setPending(true);
     try {
+      const useMultipart = images.length > 0 || videos.length > 0;
+
       const res =
-        images.length === 0
+        !useMultipart
           ? await fetch("/api/broadcasts", {
               method: "POST",
               headers: { "content-type": "application/json" },
@@ -107,7 +153,11 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
                 fd.set("format", "html");
                 fd.set("targetMode", mode);
                 if (mode === "subset") fd.set("chatIds", JSON.stringify(selectedIds));
-                for (const img of images) fd.append("images", img, img.name);
+                if (videos.length > 0) {
+                  for (const v of videos) fd.append("videos", v, v.name);
+                } else {
+                  for (const img of images) fd.append("images", img, img.name);
+                }
                 return fd;
               })(),
             });
@@ -124,6 +174,7 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
       );
       setContent("");
       setImages([]);
+      setVideos([]);
       setSelectedIds([]);
       setMode("all");
     } catch {
@@ -160,16 +211,11 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
         <CardContent className="space-y-3">
           <div className="text-sm font-medium">Message</div>
           <MessageEditor value={content} onChange={setContent} maxLength={maxLen} />
-          {content.length > maxLen ? (
-            <Alert
-              title="Error"
-              message={
-                images.length > 0
-                  ? "Message is too long for an image caption (max 1024 characters)."
-                  : "Message is too long (max 2048 characters)."
-              }
-            />
-          ) : null}
+          {content.length > maxLen ? <Alert title="Error" message={captionTooLongMessage} /> : null}
+
+          <p className="text-xs text-zinc-500">
+            Images and videos cannot be combined in one broadcast. Selecting one type clears the other.
+          </p>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
@@ -181,7 +227,7 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
               accept="image/*"
               multiple
               onChange={(e) => onPickImages(e.target.files)}
-              disabled={pending || images.length >= 10}
+              disabled={pending || images.length >= 10 || videos.length > 0}
             />
 
             {images.length > 0 ? (
@@ -193,6 +239,38 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
                   >
                     <div className="min-w-0 truncate">{f.name}</div>
                     <Button variant="secondary" onClick={() => removeImage(idx)} disabled={pending}>
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-2 border-t border-zinc-100 pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium">Videos</div>
+              <div className="text-xs opacity-70">
+                {videos.length}/{BROADCAST_VIDEO_MAX_COUNT}
+              </div>
+            </div>
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,.mp4,.mov"
+              multiple
+              onChange={(e) => onPickVideos(e.target.files)}
+              disabled={pending || videos.length >= BROADCAST_VIDEO_MAX_COUNT || images.length > 0}
+            />
+
+            {videos.length > 0 ? (
+              <div className="space-y-1">
+                {videos.map((f, idx) => (
+                  <div
+                    key={`${f.name}-${idx}`}
+                    className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0 truncate">{f.name}</div>
+                    <Button variant="secondary" onClick={() => removeVideo(idx)} disabled={pending}>
                       Remove
                     </Button>
                   </div>
@@ -226,6 +304,10 @@ export function BroadcastClient({ chats }: { chats: Chat[] }) {
                   <div className="text-sm">
                     <span className="font-medium text-zinc-700">Images attached: </span>
                     <span className="text-zinc-600">{images.length}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium text-zinc-700">Videos attached: </span>
+                    <span className="text-zinc-600">{videos.length}</span>
                   </div>
                   <div>
                     <div className="mb-1 text-sm font-medium text-zinc-700">Message preview</div>
