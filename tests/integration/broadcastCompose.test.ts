@@ -33,7 +33,7 @@ describe.runIf(hasDb)("broadcast compose", () => {
     expect(payload).not.toBeNull();
     expect(payload!.content).toBe("resend me");
     expect(payload!.target_mode).toBe("subset");
-    expect(payload!.chat_ids).toEqual([chatId]);
+    expect(payload!.chat_ids).toEqual([Number(chatId)]);
   });
 
   it("returns null for missing broadcast", async () => {
@@ -79,7 +79,7 @@ describe.runIf(hasDb)("broadcast compose", () => {
 
     const payload = await getBroadcastComposePayload(id, { failedOnly: true }, pool);
     expect(payload!.target_mode).toBe("subset");
-    expect(payload!.chat_ids).toEqual([chatFail.rows[0]!.id]);
+    expect(payload!.chat_ids).toEqual([Number(chatFail.rows[0]!.id)]);
   });
 
   it("failedOnly throws when no failures", async () => {

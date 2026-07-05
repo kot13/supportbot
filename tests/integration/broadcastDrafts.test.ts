@@ -32,7 +32,7 @@ describe.runIf(hasDb)("broadcast drafts", () => {
     );
 
     expect(await getBroadcastStatus(id, pool)).toBe("draft");
-    expect(await listBroadcastRecipientChatIds(id, pool)).toEqual([chatId]);
+    expect(await listBroadcastRecipientChatIds(id, pool)).toEqual([Number(chatId)]);
 
     await updateDraft(
       id,
