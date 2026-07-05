@@ -76,12 +76,12 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
   const textForIntent = stripBotMentionFromText(incoming.text, botUsername);
 
   if (isStartCommand(textForIntent)) {
-    await sendBotReply(chat.id, incoming.telegramChatId, START_GREETING);
+    await sendBotReply(chat.id, incoming.telegramChatId, START_GREETING, incoming.telegramMessageId);
     return;
   }
 
   if (isHelpIntent(textForIntent)) {
-    await sendBotReply(chat.id, incoming.telegramChatId, HELP_TOPICS_REPLY);
+    await sendBotReply(chat.id, incoming.telegramChatId, HELP_TOPICS_REPLY, incoming.telegramMessageId);
     return;
   }
 
@@ -134,7 +134,7 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
     }
   }
 
-  await sendBotReply(chat.id, incoming.telegramChatId, replyText);
+  await sendBotReply(chat.id, incoming.telegramChatId, replyText, incoming.telegramMessageId);
 
   if (unansweredReason) {
     const snapshot = buildUnansweredContextSnapshot({
@@ -150,19 +150,26 @@ async function sendBotReply(
   internalChatId: number,
   telegramChatId: string,
   text: string,
+  replyToMessageId?: number,
 ): Promise<void> {
   const parts = splitLongTelegramText(text);
   let lastTelegramMessageId: number | undefined;
 
-  for (const part of parts) {
+  for (const [index, part] of parts.entries()) {
+    const replyTo = index === 0 ? replyToMessageId : undefined;
     const html = markdownToTelegramHtml(part);
     let sent = await sendTelegramMessage({
       chatId: telegramChatId,
       text: html,
       parseMode: "HTML",
+      replyToMessageId: replyTo,
     });
     if (!sent.ok) {
-      sent = await sendTelegramMessage({ chatId: telegramChatId, text: part });
+      sent = await sendTelegramMessage({
+        chatId: telegramChatId,
+        text: part,
+        replyToMessageId: replyTo,
+      });
     }
     if (!sent.ok) {
       logger.warn("bot_send_failed", {
@@ -174,6 +181,7 @@ async function sendBotReply(
         await sendTelegramMessage({
           chatId: telegramChatId,
           text: OPENAI_ERROR_MESSAGE,
+          replyToMessageId: replyTo,
         });
       }
       return;

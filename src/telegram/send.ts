@@ -2,6 +2,7 @@ export type TelegramSendInput = {
   chatId: string | number;
   text: string;
   parseMode?: "HTML" | "MarkdownV2";
+  replyToMessageId?: number;
 };
 
 export type TelegramSendResult =
@@ -48,6 +49,9 @@ export async function sendTelegramMessage(input: TelegramSendInput): Promise<Tel
         text: input.text,
         parse_mode: input.parseMode,
         disable_web_page_preview: true,
+        ...(input.replyToMessageId != null
+          ? { reply_parameters: { message_id: input.replyToMessageId } }
+          : {}),
       }),
       signal: controller.signal,
     });

@@ -17,3 +17,8 @@ export function normalizeIndexedEmbeddingModel(
   }
   return DEFAULT_EMBEDDING_MODEL;
 }
+
+/** GPT-5.x models only accept the default temperature (1). */
+export function answerModelSupportsCustomTemperature(model: AnswerModel): boolean {
+  return model === "gpt-4.1";
+}

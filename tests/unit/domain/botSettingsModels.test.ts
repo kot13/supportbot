@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ANSWER_MODELS,
+  answerModelSupportsCustomTemperature,
   DEFAULT_ANSWER_MODEL,
   DEFAULT_EMBEDDING_MODEL,
   EMBEDDING_MODELS,
@@ -23,6 +24,11 @@ describe("botSettings models", () => {
     expect(normalizeIndexedEmbeddingModel("text-embedding-3-large")).toBe(
       "text-embedding-3-large",
     );
+  });
+
+  it("knows which answer models support custom temperature", () => {
+    expect(answerModelSupportsCustomTemperature("gpt-4.1")).toBe(true);
+    expect(answerModelSupportsCustomTemperature("gpt-5.5")).toBe(false);
   });
 });
 

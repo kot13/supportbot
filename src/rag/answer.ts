@@ -2,7 +2,12 @@ import OpenAI from "openai";
 
 import { getBotSettings } from "@/src/db/botSettings";
 import type { RetrievedChunk } from "@/src/db/knowledgeChunks";
-import { DEFAULT_ANSWER_MODEL, type AnswerModel } from "@/src/domain/botSettings/models";
+import {
+  answerModelSupportsCustomTemperature,
+  DEFAULT_ANSWER_MODEL,
+  type AnswerModel,
+} from "@/src/domain/botSettings/models";
+import { logger } from "@/src/observability/logger";
 
 import { requireOpenAiKey } from "./embed";
 import { buildUserPrompt, hasUsableContext, SYSTEM_PROMPT, type RecentMessage } from "./prompts";
@@ -59,7 +64,7 @@ export async function answerQuestion(input: {
     const model = await resolveAnswerModel();
     const completion = await openai.chat.completions.create({
       model,
-      temperature: 0.2,
+      ...(answerModelSupportsCustomTemperature(model) ? { temperature: 0.2 } : {}),
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -78,7 +83,10 @@ export async function answerQuestion(input: {
       return { ok: false, reason: "openai_error", message: OPENAI_ERROR_MESSAGE };
     }
     return { ok: true, answer };
-  } catch {
+  } catch (err) {
+    logger.warn("openai_answer_failed", {
+      error: err instanceof Error ? err.message : "unknown",
+    });
     return { ok: false, reason: "openai_error", message: OPENAI_ERROR_MESSAGE };
   }
 }
