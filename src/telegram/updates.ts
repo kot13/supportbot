@@ -9,6 +9,19 @@ export type NormalizedChat = {
   isActive: boolean;
 };
 
+export type NormalizedIncomingMessage = {
+  updateId: number;
+  telegramChatId: string;
+  chatType: string;
+  text: string;
+  telegramMessageId: number;
+  telegramUserId: number | null;
+  telegramUsername: string | null;
+  telegramUserFirstName: string | null;
+  replyToBot: boolean;
+  mentionUsernames: string[];
+};
+
 type AnyObj = Record<string, unknown>;
 
 const INACTIVE_CHAT_MEMBER_STATUSES = new Set(["left", "kicked"]);
@@ -125,4 +138,185 @@ export function normalizeUpdateToChat(update: TelegramUpdate): NormalizedChat | 
   }
 
   return null;
+}
+
+function messageText(msg: AnyObj): string | null {
+  const text = msg.text;
+  return typeof text === "string" && text.trim() ? text.trim() : null;
+}
+
+function extractMentions(msg: AnyObj): string[] {
+  const entities = msg.entities;
+  const text = typeof msg.text === "string" ? msg.text : "";
+  if (!Array.isArray(entities)) return [];
+  const names: string[] = [];
+  for (const ent of entities) {
+    const e = asObj(ent);
+    if (!e) continue;
+
+    if (e.type === "mention") {
+      const offset = typeof e.offset === "number" ? e.offset : null;
+      const length = typeof e.length === "number" ? e.length : null;
+      if (offset === null || length === null) continue;
+      const mention = text.slice(offset, offset + length).replace(/^@/, "");
+      if (mention) names.push(mention);
+      continue;
+    }
+
+    if (e.type === "text_mention") {
+      const user = asObj(e.user);
+      const username =
+        user && typeof user.username === "string" && user.username.trim()
+          ? user.username.trim()
+          : null;
+      if (username) names.push(username);
+      continue;
+    }
+
+    if (e.type === "bot_command") {
+      const offset = typeof e.offset === "number" ? e.offset : null;
+      const length = typeof e.length === "number" ? e.length : null;
+      if (offset === null || length === null) continue;
+      const command = text.slice(offset, offset + length);
+      const atIndex = command.indexOf("@");
+      if (atIndex >= 0) {
+        const mention = command.slice(atIndex + 1);
+        if (mention) names.push(mention);
+      }
+    }
+  }
+  return names;
+}
+
+function textContainsBotMention(text: string, botUsername: string): boolean {
+  const escaped = botUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`@${escaped}(?:\\b|$)`, "i").test(text);
+}
+
+function isReplyToBot(msg: AnyObj): boolean {
+  const reply = asObj(msg.reply_to_message);
+  if (!reply) return false;
+  const from = asObj(reply.from);
+  if (!from) return false;
+  return isOurBotUser(from);
+}
+
+export function normalizeIncomingMessage(update: TelegramUpdate): NormalizedIncomingMessage | null {
+  const u = asObj(update);
+  if (!u) return null;
+
+  const updateId = u.update_id;
+  if (typeof updateId !== "number") return null;
+
+  const message = asObj(u.message);
+  if (!message) return null;
+
+  const text = messageText(message);
+  if (!text) return null;
+
+  const chat = asObj(message.chat);
+  if (!chat) return null;
+
+  const chatType = typeof chat.type === "string" ? chat.type : "private";
+  const chatId = chat.id;
+  if (typeof chatId !== "number" && typeof chatId !== "string") return null;
+
+  const messageId = message.message_id;
+  if (typeof messageId !== "number") return null;
+
+  const from = asObj(message.from);
+  const telegramUserId = from ? userId(from) : null;
+  const telegramUsername =
+    from && typeof from.username === "string" && from.username.trim()
+      ? from.username.trim()
+      : null;
+  const telegramUserFirstName =
+    from && typeof from.first_name === "string" && from.first_name.trim()
+      ? from.first_name.trim()
+      : null;
+
+  return {
+    updateId,
+    telegramChatId: String(chatId),
+    chatType,
+    text,
+    telegramMessageId: messageId,
+    telegramUserId,
+    telegramUsername,
+    telegramUserFirstName,
+    replyToBot: isReplyToBot(message),
+    mentionUsernames: extractMentions(message),
+  };
+}
+
+export function isAddressedToBot(
+  msg: Pick<NormalizedIncomingMessage, "chatType" | "replyToBot" | "mentionUsernames" | "text">,
+  botUsername: string | null,
+): boolean {
+  if (msg.chatType === "private") return true;
+  if (msg.replyToBot) return true;
+  if (!botUsername) return false;
+
+  const lower = botUsername.toLowerCase().replace(/^@/, "");
+  if (msg.mentionUsernames.some((m) => m.toLowerCase() === lower)) return true;
+
+  return textContainsBotMention(msg.text, lower);
+}
+
+/** Remove @bot mention from message text before RAG (group mentions skew embeddings). */
+export function stripBotMentionFromText(text: string, botUsername: string | null): string {
+  let result = text.trim();
+  if (botUsername) {
+    const escaped = botUsername.replace(/^@/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    result = result.replace(new RegExp(`@${escaped}\\b`, "gi"), "");
+  }
+  return result.replace(/\s+/g, " ").trim();
+}
+
+/** Telegram /start command (optionally with @botname or deep-link payload). */
+export function isStartCommand(text: string): boolean {
+  const first = text.trim().split(/\s+/)[0] ?? "";
+  return /^\/start(?:@\w+)?$/i.test(first);
+}
+
+function normalizeIntentText(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[!?.…,]+/g, "")
+    .replace(/\s+/g, " ");
+}
+
+/** Meta-questions about bot capabilities (answered without RAG). */
+export function isHelpIntent(text: string): boolean {
+  const first = text.trim().split(/\s+/)[0] ?? "";
+  if (/^\/help(?:@\w+)?$/i.test(first)) return true;
+
+  const normalized = normalizeIntentText(text);
+  if (!normalized) return false;
+
+  const phrases = [
+    "помощь",
+    "help",
+    "что ты умеешь",
+    "чем ты можешь помочь",
+    "что вы умеете",
+    "чем вы можете помочь",
+    "на какие вопросы ты можешь ответить",
+    "на какие вопросы вы можете ответить",
+    "какие вопросы ты можешь ответить",
+    "какие вопросы вы можете ответить",
+    "что ты можешь",
+    "что вы можете",
+  ];
+
+  if (phrases.some((p) => normalized === p || normalized.startsWith(`${p} `))) {
+    return true;
+  }
+
+  return (
+    /^на какие вопросы (ты|вы) мож/.test(normalized) ||
+    /^что (ты|вы) (умеешь|можешь|умеете|можете)/.test(normalized) ||
+    /^чем (ты|вы) мож/.test(normalized)
+  );
 }

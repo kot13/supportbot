@@ -1,0 +1,74 @@
+# Single story
+
+This section describes two API methods of the story manager: **showStory** and **showStoryOnce**.  
+They allow you to open individual stories by ID and control how often they are displayed.
+
+## When to Use
+These methods are useful when you need to:
+- open a specific story by its ID;
+- show a story only once (e.g., on the user's first visit);
+- trigger a story from UI logic, events, or buttons.
+
+---
+
+## `showStory(id, options?)`
+
+Opens a story by its ID, regardless of whether the user has seen it before.
+
+### Example 1: Show story
+```tsx
+storyManager.showStory(456).catch(console.error);
+```
+
+### Example 2: Abort show story. Since 1.9.4
+
+```tsx
+const controller = new AbortController();
+const signal = controller.signal;
+storyManager.showStory(456, { signal }).catch(console.error);
+controller.abort();
+```
+
+### Parameters
+- **id**: `number | string` — the story identifier.
+- **options**: `{ signal?: AbortSignal } | undefined` - display options. Since 1.9.4.
+
+### Returns
+- `Promise<void>`
+
+### When It’s Helpful
+- Opening a story when the user clicks a "Learn more" button.
+- Reopening a story the user has already viewed.
+- Navigating directly to specific stories.
+
+---
+
+## `showStoryOnce(id, options?)`
+
+Opens a story **only once**. If the user has already seen it, the story will not be shown again.
+
+### Example 1: Show story once
+```tsx
+storyManager.showStoryOnce(789).catch(console.error);
+```
+
+### Example 2: Abort show story once. Since 1.9.4
+
+```tsx
+const controller = new AbortController();
+const signal = controller.signal;
+storyManager.showStoryOnce(789, { signal }).catch(console.error);
+controller.abort();
+```
+
+### Parameters
+- **id**: `number | string` — the story identifier.
+- **options**: `{ signal?: AbortSignal } | undefined` - display options. Since 1.9.4.
+
+### Returns
+- `Promise<void>`
+
+### When It’s Helpful
+- Displaying onboarding story on first launch.
+- Showing instructional hints only once.
+- Presenting unique messages that should not be repeated automatically.

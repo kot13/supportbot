@@ -1,0 +1,161 @@
+image: git.kiozk.ru:5050/story/ci_cd_images/ubuntu20:ssh-nodejs20
+
+variables:
+  DEPLOY_TEST_HOST: 10.129.0.7
+  DEPLOY_TEST_PORT: 22
+  DEPLOY_TEST_USER: www-data
+  DEPLOY_TEST_BUILDS_PATH: /var/www/builds
+  DEPLOY_TEST_PROJECT_NAME: inappstory-docs-test
+
+
+  DEPLOY_PROD_HOST: 10.129.0.7
+  DEPLOY_PROD_PORT: 22
+  DEPLOY_PROD_USER: www-data
+  DEPLOY_PROD_BUILDS_PATH: /var/www/builds
+  DEPLOY_PROD_PROJECT_NAME: inappstory-docs-prod
+stages:
+#  - deps
+  - build
+  - test
+  - deploy
+
+before_script:
+  - |
+    export BUILD_VERSION=$(cat package.json | grep version | head -1  | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[[:space:]]')
+  - echo "Build version $BUILD_VERSION"
+
+#install_dependencies:
+#  stage: deps
+#  cache:
+#    key:
+#      files:
+#        - package-lock.json
+#    paths:
+#      - node_modules/
+#  script:
+#    - npm ci --unsafe-perm
+#  only:
+#    refs:
+#      - master
+#      - develop
+#      - /^release\/.*$/
+#      - /^feature\/.*$/
+#    changes:
+#      - package-lock.json
+#  when: always
+
+building:
+  stage: build
+  script:
+    - echo "Build version $BUILD_VERSION"
+
+    - echo "Install deps"
+    - npm ci --unsafe-perm
+
+    - echo "Build project"
+    - npm run build
+
+    - echo "Creating archive..."
+    - cd build
+    - zip ../build.zip -qr .
+    - cd ..
+  only:
+    - master
+    - develop
+    - /^release\/.*$/
+    - /^feature\/.*$/
+#  cache:
+#    key:
+#      files:
+#        - package-lock.json
+#    paths:
+#      - node_modules/
+#    policy: pull
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - build.zip # save artifacts for deploy
+      - build # save artifacts for test stage
+  when: always
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
+eslint-sast:
+  cache: []
+  dependencies:
+    - building
+  stage: test
+  # Ensure that the scanning is only executed on master, develop, release, feature branches  or merge requests
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /^release\/.*$/  || $CI_COMMIT_BRANCH =~ /^feature\/.*$/
+#    - if: $CI_MERGE_REQUEST_ID
+
+nodejs-scan-sast:
+  cache: [ ]
+  dependencies:
+    - building
+  stage: test
+  # Ensure that the scanning is only executed on master, develop, release, feature branches  or merge requests
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /^release\/.*$/  || $CI_COMMIT_BRANCH =~ /^feature\/.*$/
+#    - if: $CI_MERGE_REQUEST_ID
+
+staging:
+  needs:
+    - building # don`t start before building is complete
+  dependencies:
+    - building
+  cache: [ ]
+  stage: deploy
+  script:
+    - echo "Deploying to test environment ($DEPLOY_TEST_HOST)"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEPLOY_TEST_HOST  >> ~/.ssh/known_hosts
+    - echo "$DEPLOY_SSH_TEST_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo "$DEPLOY_SSH_TEST_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
+    - chmod 644 ~/.ssh/id_rsa.pub
+    - ssh $DEPLOY_TEST_USER@$DEPLOY_TEST_HOST -p $DEPLOY_TEST_PORT "mkdir -p ${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}"
+    - scp -P $DEPLOY_TEST_PORT build.zip $DEPLOY_TEST_USER@$DEPLOY_TEST_HOST:${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip
+    - ssh $DEPLOY_TEST_USER@$DEPLOY_TEST_HOST -p $DEPLOY_TEST_PORT "
+      unzip -o ${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip -d ${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}/${BUILD_VERSION} > /dev/null;
+      rm ${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip;
+      rm -f /var/www/${DEPLOY_TEST_PROJECT_NAME};
+      ln -s ${DEPLOY_TEST_BUILDS_PATH}/${DEPLOY_TEST_PROJECT_NAME}/${BUILD_VERSION} /var/www/${DEPLOY_TEST_PROJECT_NAME};
+      "
+  only:
+    - master
+    - develop
+    - /^release\/.*$/
+    - /^feature\/.*$/
+  when: manual
+
+production:
+  needs:
+    - building # don`t start before building is complete
+  dependencies:
+    - building
+  cache: [ ]
+  stage: deploy
+  script:
+    - echo "Deploying to PROD environment ($DEPLOY_PROD_HOST)"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEPLOY_PROD_HOST  >> ~/.ssh/known_hosts
+    - echo "$DEPLOY_SSH_PROD_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo "$DEPLOY_SSH_PROD_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
+    - chmod 644 ~/.ssh/id_rsa.pub
+    - ssh $DEPLOY_PROD_USER@$DEPLOY_PROD_HOST -p $DEPLOY_PROD_PORT "mkdir -p ${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}"
+    - scp -P $DEPLOY_PROD_PORT build.zip $DEPLOY_PROD_USER@$DEPLOY_PROD_HOST:${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip
+    - ssh $DEPLOY_PROD_USER@$DEPLOY_PROD_HOST -p $DEPLOY_PROD_PORT "
+      unzip -o ${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip -d ${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}/${BUILD_VERSION} > /dev/null;
+      rm ${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}/deployd_build-${BUILD_VERSION}-${CI_COMMIT_SHORT_SHA}.zip;
+      rm -f /var/www/${DEPLOY_PROD_PROJECT_NAME};
+      ln -s ${DEPLOY_PROD_BUILDS_PATH}/${DEPLOY_PROD_PROJECT_NAME}/${BUILD_VERSION} /var/www/${DEPLOY_PROD_PROJECT_NAME};
+      "
+  only:
+    - master
+  when: manual

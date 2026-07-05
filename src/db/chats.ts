@@ -18,6 +18,31 @@ export async function listChats(pool: Pool = getPool()): Promise<ChatRow[]> {
   return res.rows;
 }
 
+export async function getChatById(id: number, pool: Pool = getPool()): Promise<ChatRow | null> {
+  const res = await pool.query<ChatRow>(
+    `
+      select id, telegram_chat_id::text as telegram_chat_id, title, type, is_active, last_seen_at
+      from chats where id = $1
+    `,
+    [id],
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function getChatByTelegramId(
+  telegramChatId: string,
+  pool: Pool = getPool(),
+): Promise<ChatRow | null> {
+  const res = await pool.query<ChatRow>(
+    `
+      select id, telegram_chat_id::text as telegram_chat_id, title, type, is_active, last_seen_at
+      from chats where telegram_chat_id = $1::bigint
+    `,
+    [telegramChatId],
+  );
+  return res.rows[0] ?? null;
+}
+
 export async function upsertChat(
   input: {
     telegramChatId: string;

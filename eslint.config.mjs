@@ -15,7 +15,7 @@ export default [
     },
   },
   {
-    ignores: [".next/**", "node_modules/**", "dist/**", "out/**", "coverage/**"],
+    ignores: [".next/**", "node_modules/**", "dist/**", "out/**", "coverage/**", "data/**"],
   },
   {
     rules: {

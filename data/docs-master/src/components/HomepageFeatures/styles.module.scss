@@ -1,0 +1,32 @@
+@use '../../css/custom.scss' as theme;
+
+.features {
+  padding: 1rem 0;
+  width: 100%;
+}
+
+.featuresList {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.featureSvg {
+  height: 40px;
+  width: 40px;
+  margin: 24px;
+}
+
+.featureVersion {
+  font-weight: normal;
+  color: var(--ifm-color-secondary-darkest);
+  margin: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.sdkButton {
+  @include theme.buttonStyle;
+}

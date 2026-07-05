@@ -10,7 +10,8 @@ export async function POST(request: Request) {
   }
 
   const update = (await request.json()) as unknown;
-  await handleTelegramUpdate(update);
+  void handleTelegramUpdate(update).catch(() => {
+    // Errors logged inside handleTelegramUpdate / processIncomingMessage
+  });
   return NextResponse.json({ ok: true }, { status: 200 });
 }
-

@@ -1,0 +1,37 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+@use '../css/custom.scss' as theme;
+
+.heroBanner {
+  padding: 2rem 0 3rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  width: 210px;
+  height: 210px;
+  min-width: 210px;
+  min-height: 210px;
+}
+
+.getStarted {
+  padding: 24px;
+  @include theme.buttonStyle;
+}

@@ -4,9 +4,10 @@ Telegram bot broadcast panel + admin UI.
 
 ## Requirements
 
-- PostgreSQL (local or container)
+- PostgreSQL (local or container) with **pgvector** extension available
 - Telegram bot token (via BotFather)
 - At least one Telegram chat where the bot can be added
+- **OpenAI API key** (`OPENAI_API_KEY`) for bot Q&A / RAG
 
 ## Quickstart
 
@@ -16,9 +17,9 @@ Telegram bot broadcast panel + admin UI.
 npm install
 ```
 
-2. Create `.env` from `.env.example` and set `DATABASE_URL`.
+2. Create `.env` from `.env.example` and set `DATABASE_URL` and `OPENAI_API_KEY`.
 
-3. Start PostgreSQL and create an empty database.
+3. Start PostgreSQL **with pgvector** (see below).
 
 4. Run migrations:
 
@@ -52,7 +53,49 @@ npm run dev
 
 11. Confirm the chat appears on `/chats`.
 
-12. Open `/broadcast`, select the chat (or all chats), compose a formatted message, and send.
+12. Index the InAppStory knowledge base (required before bot Q&A):
+
+```bash
+npm run rag:index
+```
+
+13. Ask the bot a question in Telegram (private chat, or `@mention` in a group). Open `/chats/[id]` to view conversation history.
+
+14. Open `/broadcast`, select the chat (or all chats), compose a formatted message, and send.
+
+See also: [specs/009-bot-qa-rag/quickstart.md](specs/009-bot-qa-rag/quickstart.md)
+
+## PostgreSQL with pgvector
+
+Migration `003_bot_qa_rag.sql` requires the `vector` extension. **PostgreSQL 13 from Homebrew does not include pgvector** (Homebrew `pgvector` is built for PostgreSQL 17/18 only).
+
+### Option A — Docker (recommended for local dev)
+
+```bash
+docker compose up -d
+```
+
+In `.env` use port **5433** (avoids conflict with a local Postgres on 5432):
+
+```env
+DATABASE_URL="postgresql://supportbot:supportbot@localhost:5433/supportbot"
+```
+
+Wait until healthy, then `npm run db:migrate`.
+
+### Option B — Homebrew PostgreSQL 17 or 18
+
+```bash
+brew install postgresql@17   # or use postgresql@18
+brew services stop postgresql@13
+brew services start postgresql@17
+```
+
+`pgvector` from Homebrew is already linked for `@17` / `@18`. Create the database and user, then point `DATABASE_URL` at that instance.
+
+### Option C — Keep PostgreSQL 13
+
+Not supported out of the box: you must compile [pgvector](https://github.com/pgvector/pgvector) against your PG13 `pg_config`, or switch to Option A/B.
 
 ## Smoke test checklist
 
@@ -61,6 +104,8 @@ npm run dev
 - Can see at least one chat in `/chats` after adding the bot.
 - Can send a broadcast and see a success/failure summary.
 - Can view the broadcast record in history with per-chat outcomes.
+- Bot answers InAppStory questions in Telegram after `rag:index`.
+- Chat message history is visible at `/chats/[id]`.
 
 ## UI kit / design system usage
 

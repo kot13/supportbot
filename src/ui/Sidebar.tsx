@@ -7,6 +7,7 @@ import { Button } from "./Button";
 
 const nav = [
   { href: "/chats", label: "Chats" },
+  { href: "/unanswered", label: "Unanswered" },
   { href: "/broadcast", label: "Broadcast" },
   { href: "/broadcast/history", label: "History" },
   { href: "/bot", label: "Bots" },

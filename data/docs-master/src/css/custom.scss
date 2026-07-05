@@ -1,0 +1,132 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+
+@font-face {
+  font-family: "TT Commons";
+  src: url("/fonts/TTCommons-Regular.eot"); /* IE9 Compat Modes */
+  src:
+    url("/fonts/TTCommons-Regular.eot?#iefix") format("embedded-opentype"),
+    /* IE6-IE8 */ url("/fonts/TTCommons-Regular.woff") format("woff"),
+    /* Modern Browsers */ url("/fonts/TTCommons-Regular.woff2") format("woff2"),
+    /* Modern Browsers */ url("/fonts/TTCommons-Regular.ttf") format("truetype"); /* Safari, Android, iOS */
+  font-style: normal;
+  font-weight: normal;
+  text-rendering: optimizeLegibility;
+  font-display: fallback;
+}
+
+@font-face {
+  font-family: "TT Commons";
+  src: url("/fonts/TTCommons-Bold.eot"); /* IE9 Compat Modes */
+  src:
+    url("/fonts/TTCommons-Bold.eot?#iefix") format("embedded-opentype"),
+    /* IE6-IE8 */ url("/fonts/TTCommons-Bold.woff") format("woff"),
+    /* Modern Browsers */ url("/fonts/TTCommons-Bold.woff2") format("woff2"),
+    /* Modern Browsers */ url("/fonts/TTCommons-Bold.ttf") format("truetype"); /* Safari, Android, iOS */
+  font-style: normal;
+  font-weight: bold;
+  text-rendering: optimizeLegibility;
+  font-display: fallback;
+}
+
+body {
+  font-family:
+    "TT Commons", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+:root {
+  --ifm-color-primary: #0b57dd;
+  --ifm-color-primary-dark: #0a4ec7;
+  --ifm-color-primary-darker: #094abc;
+  --ifm-color-primary-darkest: #083d9b;
+  --ifm-color-primary-light: #0c60f3;
+  --ifm-color-primary-lighter: #1767f3;
+  --ifm-color-primary-lightest: #387df5;
+  --ifm-code-font-size: 95%;
+  --ifm-background-color: #fff;
+
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  --text-primary: #2c3e50;
+  --text-secondary: #6a8bad;
+  --text-contrast: #ffffff;
+
+  --ifm-menu-color: var(--text-primary);
+  --ifm-font-color-base: var(--text-primary);
+
+  --button-radius: 5px;
+  --docsearch-actions-width: 150px;
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+  --ifm-color-primary: #3780ff;
+  --ifm-color-primary-dark: #1e7dfa;
+  --ifm-color-primary-darker: #0e75fa;
+  --ifm-color-primary-darkest: #045fd5;
+  --ifm-color-primary-light: #5aa1fc;
+  --ifm-color-primary-lighter: #6aa9fc;
+  --ifm-color-primary-lightest: #97c4fd;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  --ifm-background-color: #151617;
+
+  --text-primary: #2c3e50;
+  --text-secondary: #6a8bad;
+  --text-contrast: #ffffff;
+
+  --ifm-menu-color: var(--text-contrast);
+  --ifm-font-color-base: var(--text-contrast);
+}
+
+[class*="level-1"] {
+  font-weight: 800;
+}
+
+[class*="level-2"] {
+  font-weight: 400;
+}
+.theme-layout-navbar {
+  background-color: var(--ifm-background-color);
+}
+
+.footer {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  padding: 1rem 0;
+}
+
+.footer__title {
+  color: var(--text-primary);
+}
+
+.footer__link-item {
+  color: var(--text-secondary);
+}
+
+.footer__link-item:hover {
+  color: var(--ifm-color-primary);
+}
+
+.footer__copyright {
+  color: var(--text-secondary);
+}
+
+@mixin buttonStyle {
+  color: var(--text-contrast);
+  background-color: var(--ifm-color-primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--button-radius);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+
+  &:hover {
+    background-color: var(--ifm-color-primary-darker);
+  }
+}

@@ -10,6 +10,8 @@
     "format": "prettier --write .",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "rag:index": "tsx scripts/rag-index.ts",
+    "telegram:poll": "tsx src/telegram/pollingRunner.ts",
     "test": "vitest run --exclude tests/e2e",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
@@ -25,9 +27,11 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
     "next": "^16.2.1",
+    "openai": "^6.45.0",
     "pg": "^8.20.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "yaml": "^2.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

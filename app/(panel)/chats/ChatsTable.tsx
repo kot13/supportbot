@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { DataTable, type DataTableColumn } from "@/src/ui/Table";
 
 type ChatRow = {
@@ -31,7 +33,11 @@ export function ChatsTable({ chats }: { chats: ChatRow[] }) {
         renderCell={(c, k) => {
           switch (k) {
             case "title":
-              return c.title ?? "Untitled chat";
+              return (
+                <Link className="text-indigo-600 hover:underline" href={`/chats/${c.id}`}>
+                  {c.title ?? "Untitled chat"}
+                </Link>
+              );
             case "telegram_chat_id":
               return <span className="font-mono text-xs opacity-80">{c.telegram_chat_id}</span>;
             case "type":

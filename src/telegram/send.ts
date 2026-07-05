@@ -8,6 +8,23 @@ export type TelegramSendResult =
   | { ok: true; telegramMessageId?: number }
   | { ok: false; errorCode?: string; errorMessage: string };
 
+const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
+
+export function splitLongTelegramText(text: string, maxLen = TELEGRAM_MAX_MESSAGE_LENGTH): string[] {
+  if (text.length <= maxLen) return [text];
+  const parts: string[] = [];
+  let rest = text;
+  while (rest.length > maxLen) {
+    let cut = rest.lastIndexOf("\n\n", maxLen);
+    if (cut < maxLen * 0.5) cut = rest.lastIndexOf("\n", maxLen);
+    if (cut < maxLen * 0.5) cut = maxLen;
+    parts.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
 export async function sendTelegramMessage(input: TelegramSendInput): Promise<TelegramSendResult> {
   // Lazy import to avoid env/db access at build time.
   const { getBotSettings } = await import("@/src/db/botSettings");
