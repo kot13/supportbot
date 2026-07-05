@@ -18,6 +18,23 @@ export default [
     ignores: [".next/**", "node_modules/**", "dist/**", "out/**", "coverage/**", "data/**"],
   },
   {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        require: "readonly",
+        module: "readonly",
+        exports: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        process: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     rules: {
       "no-console": "off",
     },
