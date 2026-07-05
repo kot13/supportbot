@@ -59,11 +59,9 @@ function NavLinks({
         const active = pathname === item.href || pathname?.startsWith(item.href + "/");
         const Icon = item.icon;
 
-        return (
+        const link = (
           <Link
-            key={item.href}
             href={item.href}
-            title={collapsed ? item.label : undefined}
             aria-label={collapsed ? item.label : undefined}
             className={[
               "rounded-md text-sm no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
@@ -76,6 +74,14 @@ function NavLinks({
             <Icon className="h-4 w-4 shrink-0" />
             {!collapsed ? <span>{item.label}</span> : null}
           </Link>
+        );
+
+        return collapsed ? (
+          <span key={item.href} title={item.label} className="inline-flex">
+            {link}
+          </span>
+        ) : (
+          <span key={item.href}>{link}</span>
         );
       })}
     </>
@@ -163,7 +169,6 @@ export function Sidebar({
               : "flex w-full items-center justify-center gap-2"
           }
           onClick={logout}
-          title={collapsed ? "Sign out" : undefined}
           aria-label={collapsed ? "Sign out" : undefined}
         >
           <LogoutIcon className="h-4 w-4 shrink-0" />
