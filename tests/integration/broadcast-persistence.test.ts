@@ -52,7 +52,7 @@ describe.runIf(hasDb)("broadcast persistence", () => {
 
     const chatRes = await pool.query<{ id: number }>(
       "insert into chats (telegram_chat_id, title) values ($1, $2) on conflict (telegram_chat_id) do update set updated_at = now() returning id",
-      [`${Date.now()}-agg`, "Agg chat"],
+      [-(Date.now() % 1_000_000_000_000) - 1, "Agg chat"],
     );
     const chatId = chatRes.rows[0]!.id;
 
@@ -83,7 +83,7 @@ describe.runIf(hasDb)("broadcast persistence", () => {
 
     const chatRes = await pool.query<{ id: number }>(
       "insert into chats (telegram_chat_id, title) values ($1, $2) on conflict (telegram_chat_id) do update set updated_at = now() returning id",
-      [`${Date.now()}-nocode`, "No code chat"],
+      [-(Date.now() % 1_000_000_000_000) - 2, "No code chat"],
     );
     const chatId = chatRes.rows[0]!.id;
 

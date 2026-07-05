@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2026-07-05
 - PostgreSQL — `broadcast_attachments` (расширение использования), `broadcast_messages` без обязательного изменения контракта контента (008-broadcast-video)
 - TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `openai`, `zod`, `@heroui/react`, Telegram Bot API (`getUpdates`, long poll CLI), OpenAI API (GPT-4.1, text-embedding-3-small) (009-bot-qa-rag)
 - PostgreSQL — `chat_messages` (+ `telegram_username`, `unanswered_reason`), `knowledge_chunks`, `knowledge_index_runs`, `processed_telegram_updates`; migrations 003–005; extension `vector` (009-bot-qa-rag)
+- TypeScript (Node.js 20+), Next.js 16 App Router + GitHub Actions, `actions/checkout`, `actions/setup-node`, SSH deploy (`appleboy/ssh-action` или native ssh) (010-github-cicd)
+- PostgreSQL + pgvector в CI (service container `pgvector/pgvector:pg16`); production DB на сервере (010-github-cicd)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -40,9 +42,9 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 010-github-cicd: Added TypeScript (Node.js 20+), Next.js 16 App Router + GitHub Actions, `actions/checkout`, `actions/setup-node`, SSH deploy (`appleboy/ssh-action` или native ssh)
 - 009-bot-qa-rag (v1.1): RAG Q&A bot, `/unanswered`, long polling (`npm run telegram:poll`), Markdown→HTML в Telegram, migrations 004–005
 - 008-broadcast-video: Added TypeScript (Node.js 20+) + Next.js (App Router), `@heroui/react`, Telegram Bot API (`sendVideo`, `sendMediaGroup` с видео), `pg`
-- 007-send-confirmation: Added TypeScript (Node.js 20+) + Next.js (App Router), React, `@heroui/react` (Card, Modal и др.), существующий `POST /api/broadcasts`
 
 
 <!-- MANUAL ADDITIONS START -->

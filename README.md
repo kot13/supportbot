@@ -135,3 +135,35 @@ Credentials used by the smoke tests:
 - `ADMIN_LOGIN` (default `admin`)
 - `ADMIN_PASSWORD` (default `change-me`)
 
+## CI/CD
+
+GitHub Actions runs on every **pull request** and on **push to `main`**.
+
+### Checks (job `quality`)
+
+| Step | Command |
+|------|---------|
+| Lint | `npm run lint` |
+| Migrate | `npm run db:migrate` (Postgres + pgvector service) |
+| Test | `npm test` (unit + integration; e2e excluded) |
+| Build | `npm run build` |
+
+PR status check name: **CI / quality**. Enable it as a required check under branch protection after the first successful run on `main`.
+
+### Deploy (job `deploy`)
+
+Runs only on **push to `main`** after `quality` succeeds. Deploys via SSH to the production server (`scripts/deploy.sh` → **pm2 reload**).
+
+Repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Purpose |
+|--------|---------|
+| `DEPLOY_SSH_KEY` | Private SSH key |
+| `DEPLOY_HOST` | Server hostname or IP |
+| `DEPLOY_USER` | SSH user |
+| `DEPLOY_PATH` | Absolute path to the app clone on the server |
+
+Production `.env` lives on the server only — not in GitHub.
+
+Full setup (pm2, nginx, certbot): [specs/010-github-cicd/quickstart.md](specs/010-github-cicd/quickstart.md)
+
