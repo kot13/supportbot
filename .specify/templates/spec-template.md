@@ -3,7 +3,8 @@
 **Feature Branch**: `[###-feature-name]`  
 **Created**: [DATE]  
 **Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+**Input**: User description: "$ARGUMENTS"  
+**Язык**: русский (обязательно; см. Конституция supportbot, принцип VI)
 
 ## User Scenarios & Testing *(mandatory)*
 

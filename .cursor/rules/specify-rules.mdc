@@ -27,6 +27,8 @@ Auto-generated from all feature plans. Last updated: 2026-07-05
 - PostgreSQL — новая таблица `unanswered_context_snapshots` (JSONB для чанков и диалога); FK на `chat_messages` (011-unanswered-context-metadata)
 - TypeScript (Node.js 20+) + Next.js 16 App Router, React, `@heroui/react` (Modal), `pg`, `zod`, существующие `sendBroadcast`, `POST /api/broadcasts` (012-broadcast-edit-resend)
 - PostgreSQL — `broadcast_messages`, `broadcast_recipients`, `broadcast_attachments`, `delivery_results` (без новых таблиц) (012-broadcast-edit-resend)
+- TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `openai`, `zod`, `@heroui/react`, существующие `src/rag/*`, `POST /api/knowledge/reindex`, `BotSettingsForm` (013-bot-model-settings)
+- PostgreSQL — расширение `bot_settings` (`answer_model`, `embedding_model`), `knowledge_index_runs.embedding_model`; migration `007`; `vector(1536)` без смены размерности (013-bot-model-settings)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -46,6 +48,7 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 013-bot-model-settings: Added TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `openai`, `zod`, `@heroui/react`, `src/rag/*`, `POST /api/knowledge/reindex`, `GET /api/knowledge/index-status`, bot settings UI
 - 012-broadcast-edit-resend: Added TypeScript (Node.js 20+) + Next.js 16 App Router, React, `@heroui/react` (Modal), `pg`, `zod`, существующие `sendBroadcast`, `POST /api/broadcasts`
 - 011-unanswered-context-metadata: Added TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `zod`, `@heroui/react` (Modal), существующие `src/rag/*`, `src/telegram/processMessage.ts`
 - 010-github-cicd: Added TypeScript (Node.js 20+), Next.js 16 App Router + GitHub Actions, `actions/checkout`, `actions/setup-node`, SSH deploy (`appleboy/ssh-action` или native ssh)

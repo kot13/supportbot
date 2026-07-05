@@ -31,7 +31,8 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Gate VI (Язык)**: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `tasks.md`, `checklists/`, `contracts/` — описательный текст на русском; технические литералы (пути, API, JSON) допустимы на английском.
+- [Остальные gates — по актуальной конституции `.specify/memory/constitution.md`]
 
 ## Project Structure
 

@@ -7,6 +7,7 @@ import {
   answerQuestion,
   OPENAI_ERROR_MESSAGE,
 } from "@/src/rag/answer";
+import { getKnowledgeIndexStatus } from "@/src/rag/knowledgeIndexStatus";
 import { retrieveContext } from "@/src/rag/retrieve";
 import { buildUnansweredContextSnapshot } from "@/src/rag/unansweredSnapshot";
 import type { RecentMessage } from "@/src/rag/prompts";
@@ -17,6 +18,9 @@ import { markdownToTelegramHtml } from "./markdownToTelegramHtml";
 import { sendTelegramMessage, splitLongTelegramText } from "./send";
 import type { TelegramUpdate } from "./updates";
 import { isAddressedToBot, isHelpIntent, isStartCommand, normalizeIncomingMessage, stripBotMentionFromText } from "./updates";
+
+const OUTDATED_INDEX_MESSAGE =
+  "База знаний требует переиндексации после смены модели эмбеддингов. Администратор может выполнить переиндексацию в настройках бота.";
 
 const START_GREETING =
   "Привет! Я бот поддержки InAppStory.\n\nЗадайте вопрос по документации SDK или API — постараюсь ответить на основе базы знаний.";
@@ -82,16 +86,20 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
   }
 
   const chunkCount = await countKnowledgeChunks();
+  const indexStatus = await getKnowledgeIndexStatus();
   let unansweredReason: string | null = null;
   let replyText: string;
   let chunks: RetrievedChunk[] = [];
   let recentMessages: RecentMessage[] = [];
   let searchPerformed = false;
 
-  if (chunkCount === 0) {
+  if (chunkCount === 0 || indexStatus.state === "never_indexed") {
     unansweredReason = "no_knowledge_index";
     replyText =
       "База знаний ещё не проиндексирована. Администратор должен выполнить команду индексации (rag:index).";
+  } else if (indexStatus.state === "outdated") {
+    unansweredReason = "no_knowledge_index";
+    replyText = OUTDATED_INDEX_MESSAGE;
   } else {
     const recentRows = await listRecentChatMessages(chat.id, chatContextLimit());
     recentMessages = recentRows.map((m) => ({

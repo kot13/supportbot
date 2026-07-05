@@ -135,6 +135,7 @@ Given that feature description, do this:
       - [ ] No implementation details (languages, frameworks, APIs)
       - [ ] Focused on user value and business needs
       - [ ] Written for non-technical stakeholders
+      - [ ] Written in Russian (Constitution principle VI); English only for code/API literals
       - [ ] All mandatory sections completed
       
       ## Requirement Completeness
@@ -246,6 +247,7 @@ Given that feature description, do this:
 
 ## Quick Guidelines
 
+- **Язык**: вся спецификация и связанные артефакты в `specs/` MUST быть на русском (Конституция, принцип VI). Исключение — технические литералы (пути, API, env, JSON).
 - Focus on **WHAT** users need and **WHY**.
 - Avoid HOW to implement (no tech stack, APIs, code structure).
 - Written for business stakeholders, not developers.

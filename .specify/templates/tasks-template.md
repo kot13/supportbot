@@ -5,8 +5,9 @@ description: "Task list template for feature implementation"
 
 # Tasks: [FEATURE NAME]
 
-**Input**: Design documents from `/specs/[###-feature-name]/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Input**: Design documents from `/specs/[###-feature-name]/`  
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/  
+**Язык**: все артефакты в `specs/` — на русском (Конституция, принцип VI)
 
 **Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 

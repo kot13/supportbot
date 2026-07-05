@@ -5,6 +5,7 @@ import {
   countKnowledgeChunks,
   upsertKnowledgeChunk,
 } from "@/src/db/knowledgeChunks";
+import { getBotSettings } from "@/src/db/botSettings";
 import {
   completeIndexRun,
   failIndexRun,
@@ -26,6 +27,8 @@ export type IndexKnowledgeResult =
   | { ok: false; error: string; runId?: number };
 
 export async function indexKnowledge(): Promise<IndexKnowledgeResult> {
+  const settings = await getBotSettings();
+  const embeddingModel = settings.embedding_model;
   const runId = await startIndexRun();
   try {
     const mdChunks = await chunkMarkdownDocs(path.join(DATA_ROOT, "docs-master", "docs"));
@@ -59,7 +62,7 @@ export async function indexKnowledge(): Promise<IndexKnowledgeResult> {
     }
 
     const chunkCount = await countKnowledgeChunks();
-    await completeIndexRun(runId, chunkCount);
+    await completeIndexRun(runId, chunkCount, embeddingModel);
     return { ok: true, chunkCount, runId };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Index failed";

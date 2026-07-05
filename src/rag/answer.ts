@@ -1,11 +1,11 @@
 import OpenAI from "openai";
 
+import { getBotSettings } from "@/src/db/botSettings";
 import type { RetrievedChunk } from "@/src/db/knowledgeChunks";
+import { DEFAULT_ANSWER_MODEL, type AnswerModel } from "@/src/domain/botSettings/models";
 
 import { requireOpenAiKey } from "./embed";
 import { buildUserPrompt, hasUsableContext, SYSTEM_PROMPT, type RecentMessage } from "./prompts";
-
-const CHAT_MODEL = "gpt-4.1";
 
 export type AnswerQuestionResult =
   | { ok: true; answer: string }
@@ -34,6 +34,11 @@ function getClient(): OpenAI {
   return client;
 }
 
+async function resolveAnswerModel(): Promise<AnswerModel> {
+  const settings = await getBotSettings();
+  return settings.answer_model ?? DEFAULT_ANSWER_MODEL;
+}
+
 export async function answerQuestion(input: {
   question: string;
   chunks: RetrievedChunk[];
@@ -51,8 +56,9 @@ export async function answerQuestion(input: {
 
   try {
     const openai = getClient();
+    const model = await resolveAnswerModel();
     const completion = await openai.chat.completions.create({
-      model: CHAT_MODEL,
+      model,
       temperature: 0.2,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },

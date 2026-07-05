@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 
-const EMBEDDING_MODEL = "text-embedding-3-small";
-const EMBEDDING_DIMS = 1536;
+import { getBotSettings } from "@/src/db/botSettings";
+import {
+  DEFAULT_EMBEDDING_MODEL,
+  EMBEDDING_DIMENSIONS,
+  type EmbeddingModel,
+} from "@/src/domain/botSettings/models";
 
 let client: OpenAI | null = null;
 
@@ -24,13 +28,19 @@ export function requireOpenAiKey(): string {
   return apiKey;
 }
 
+async function resolveEmbeddingModel(): Promise<EmbeddingModel> {
+  const settings = await getBotSettings();
+  return settings.embedding_model ?? DEFAULT_EMBEDDING_MODEL;
+}
+
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
   const openai = getClient();
+  const model = await resolveEmbeddingModel();
   const res = await openai.embeddings.create({
-    model: EMBEDDING_MODEL,
+    model,
     input: texts,
-    dimensions: EMBEDDING_DIMS,
+    dimensions: EMBEDDING_DIMENSIONS,
   });
   return res.data
     .sort((a, b) => a.index - b.index)
@@ -43,4 +53,4 @@ export async function embedText(text: string): Promise<number[]> {
   return embedding;
 }
 
-export const embeddingDimensions = EMBEDDING_DIMS;
+export const embeddingDimensions = EMBEDDING_DIMENSIONS;
