@@ -21,6 +21,7 @@ export default async function BroadcastHistoryDetailPage({ params }: PageProps) 
 
   const successCount = deliveries.filter((d) => d.status === "success").length;
   const failureCount = deliveries.filter((d) => d.status === "failure").length;
+  const isDraft = broadcast.status === "draft";
 
   return (
     <div className="space-y-6">
@@ -33,9 +34,36 @@ export default async function BroadcastHistoryDetailPage({ params }: PageProps) 
             Format: {broadcast.format} · Target: {broadcast.target_mode}
           </p>
         </div>
-        <Link className="text-sm text-indigo-600 hover:underline" href="/broadcast/history">
-          ← Back to history
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          {isDraft ? (
+            <Link
+              className="text-sm font-medium text-indigo-600 hover:underline"
+              href={`/broadcast?draftId=${broadcast.id}`}
+            >
+              Continue editing
+            </Link>
+          ) : (
+            <>
+              <Link
+                className="text-sm font-medium text-indigo-600 hover:underline"
+                href={`/broadcast?from=${broadcast.id}`}
+              >
+                Edit and resend
+              </Link>
+              {failureCount > 0 ? (
+                <Link
+                  className="text-sm font-medium text-indigo-600 hover:underline"
+                  href={`/broadcast?from=${broadcast.id}&failedOnly=1`}
+                >
+                  Retry failed
+                </Link>
+              ) : null}
+            </>
+          )}
+          <Link className="text-sm text-indigo-600 hover:underline" href="/broadcast/history">
+            ← Back to history
+          </Link>
+        </div>
       </div>
 
       <dl className="grid gap-2 text-sm sm:grid-cols-2">
@@ -74,7 +102,9 @@ export default async function BroadcastHistoryDetailPage({ params }: PageProps) 
 
       <div className="space-y-2">
         <h2 className="text-sm font-medium text-zinc-700">Delivery results</h2>
-        {deliveries.length === 0 ? (
+        {isDraft ? (
+          <p className="text-sm text-zinc-500">Draft — not sent yet.</p>
+        ) : deliveries.length === 0 ? (
           <p className="text-sm text-zinc-500">No delivery results yet for this broadcast.</p>
         ) : (
           <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">

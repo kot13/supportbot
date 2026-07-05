@@ -24,11 +24,16 @@ export function ChatPicker({
 }) {
   const activeChats = useMemo(() => chats.filter((c) => c.isActive), [chats]);
 
+  function isSelected(chatId: number) {
+    return selectedIds.some((id) => Number(id) === Number(chatId));
+  }
+
   function toggle(chatId: number) {
-    if (selectedIds.includes(chatId)) {
-      onSelectedIdsChange(selectedIds.filter((id) => id !== chatId));
+    const normalizedId = Number(chatId);
+    if (isSelected(normalizedId)) {
+      onSelectedIdsChange(selectedIds.filter((id) => Number(id) !== normalizedId));
     } else {
-      onSelectedIdsChange([...selectedIds, chatId]);
+      onSelectedIdsChange([...selectedIds, normalizedId]);
     }
   }
 
@@ -63,7 +68,7 @@ export function ChatPicker({
                 <li key={c.id} className="flex items-center gap-3 p-3">
                   <input
                     type="checkbox"
-                    checked={selectedIds.includes(c.id)}
+                    checked={isSelected(c.id)}
                     onChange={() => toggle(c.id)}
                   />
                   <div className="min-w-0">

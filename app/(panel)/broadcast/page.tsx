@@ -3,12 +3,21 @@ import { listChats } from "@/src/db/chats";
 
 import { BroadcastClient } from "./BroadcastClient";
 
-export default async function BroadcastPage() {
+type PageProps = {
+  searchParams: Promise<{
+    from?: string;
+    failedOnly?: string;
+    draftId?: string;
+  }>;
+};
+
+export default async function BroadcastPage({ searchParams }: PageProps) {
   await requireAuth();
+  const sp = await searchParams;
   const chats = await listChats();
 
   const uiChats = chats.map((c) => ({
-    id: c.id,
+    id: Number(c.id),
     telegramChatId: c.telegram_chat_id,
     title: c.title,
     isActive: c.is_active,
@@ -22,8 +31,12 @@ export default async function BroadcastPage() {
           Create and send a message to all or selected chats.
         </p>
       </div>
-      <BroadcastClient chats={uiChats} />
+      <BroadcastClient
+        chats={uiChats}
+        initialFrom={sp.from}
+        initialFailedOnly={sp.failedOnly === "1"}
+        initialDraftId={sp.draftId}
+      />
     </div>
   );
 }
-

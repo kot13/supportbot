@@ -16,7 +16,7 @@ type ChatRow = {
 const columns: Array<DataTableColumn<"title" | "telegram_chat_id" | "type" | "is_active" | "last_seen_at">> =
   [
     { key: "title", label: "Title" },
-    { key: "telegram_chat_id", label: "telegram_chat_id" },
+    { key: "telegram_chat_id", label: "ID" },
     { key: "type", label: "Type" },
     { key: "is_active", label: "Active" },
     { key: "last_seen_at", label: "Last seen" },
