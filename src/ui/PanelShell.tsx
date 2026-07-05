@@ -22,21 +22,21 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col md:flex-row">
-        <div className="md:min-h-screen md:shrink-0">
-          <div className="hidden md:block md:min-h-screen">
+    <div className="h-screen overflow-hidden bg-white text-zinc-900">
+      <div className="mx-auto flex h-full max-w-6xl flex-col md:flex-row">
+        <div className="shrink-0 md:h-full">
+          <div className="hidden md:block md:h-full">
             <Sidebar
               variant="sidebar"
               collapsed={collapsed}
               onToggleCollapsed={toggleCollapsed}
             />
           </div>
-          <div className="border-b border-zinc-200 p-3 md:hidden">
+          <div className="border-b border-zinc-200 md:hidden">
             <Sidebar variant="mobileBar" />
           </div>
         </div>
-        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

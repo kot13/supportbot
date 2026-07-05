@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@heroui/react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Button } from "./Button";
@@ -26,6 +27,25 @@ type SidebarProps = {
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 };
+
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      {open ? (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      ) : (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      )}
+    </svg>
+  );
+}
 
 function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
@@ -95,6 +115,11 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   async function logout() {
     try {
@@ -108,26 +133,37 @@ export function Sidebar({
 
   if (variant === "mobileBar") {
     return (
-      <aside className="flex items-center justify-between gap-3 bg-white p-2">
-        <div className="space-y-1">
+      <header className="bg-white">
+        <div className="flex items-center justify-between gap-3 p-3">
           <div className="text-sm font-semibold">supportbot</div>
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            className="rounded-md p-2 text-zinc-700 hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            <MenuIcon open={mobileMenuOpen} />
+          </button>
         </div>
 
-        <nav className="flex flex-wrap items-center gap-1">
-          <NavLinks pathname={pathname} collapsed={false} />
-        </nav>
-
-        <Button variant="secondary" onClick={logout}>
-          Sign out
-        </Button>
-      </aside>
+        {mobileMenuOpen ? (
+          <nav className="flex flex-col gap-1 border-t border-zinc-200 p-3">
+            <NavLinks pathname={pathname} collapsed={false} />
+            <Button variant="secondary" className="mt-2 w-full" onClick={logout}>
+              Sign out
+            </Button>
+          </nav>
+        ) : null}
+      </header>
     );
   }
 
   return (
     <aside
       className={[
-        "flex min-h-screen flex-col border-r border-zinc-200 bg-white transition-[width,padding] duration-200 ease-in-out",
+        "flex h-full flex-col border-r border-zinc-200 bg-white transition-[width,padding] duration-200 ease-in-out",
         collapsed ? "w-16 gap-3 p-2" : "w-[260px] gap-4 p-4",
       ].join(" ")}
     >
