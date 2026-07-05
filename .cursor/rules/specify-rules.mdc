@@ -23,6 +23,8 @@ Auto-generated from all feature plans. Last updated: 2026-07-05
 - PostgreSQL — `chat_messages` (+ `telegram_username`, `unanswered_reason`), `knowledge_chunks`, `knowledge_index_runs`, `processed_telegram_updates`; migrations 003–005; extension `vector` (009-bot-qa-rag)
 - TypeScript (Node.js 20+), Next.js 16 App Router + GitHub Actions, `actions/checkout`, `actions/setup-node`, SSH deploy (`appleboy/ssh-action` или native ssh) (010-github-cicd)
 - PostgreSQL + pgvector в CI (service container `pgvector/pgvector:pg16`); production DB на сервере (010-github-cicd)
+- TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `zod`, `@heroui/react` (Modal), существующие `src/rag/*`, `src/telegram/processMessage.ts` (011-unanswered-context-metadata)
+- PostgreSQL — новая таблица `unanswered_context_snapshots` (JSONB для чанков и диалога); FK на `chat_messages` (011-unanswered-context-metadata)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -42,9 +44,9 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 011-unanswered-context-metadata: Added TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `zod`, `@heroui/react` (Modal), существующие `src/rag/*`, `src/telegram/processMessage.ts`
 - 010-github-cicd: Added TypeScript (Node.js 20+), Next.js 16 App Router + GitHub Actions, `actions/checkout`, `actions/setup-node`, SSH deploy (`appleboy/ssh-action` или native ssh)
 - 009-bot-qa-rag (v1.1): RAG Q&A bot, `/unanswered`, long polling (`npm run telegram:poll`), Markdown→HTML в Telegram, migrations 004–005
-- 008-broadcast-video: Added TypeScript (Node.js 20+) + Next.js (App Router), `@heroui/react`, Telegram Bot API (`sendVideo`, `sendMediaGroup` с видео), `pg`
 
 
 <!-- MANUAL ADDITIONS START -->

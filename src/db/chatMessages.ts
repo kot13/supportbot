@@ -1,6 +1,10 @@
 import type { Pool } from "pg";
 
 import { getPool } from "./pool";
+import {
+  insertUnansweredContextSnapshot,
+  type UnansweredContextSnapshot,
+} from "./unansweredContextSnapshots";
 
 export type ChatMessageRole = "user" | "bot";
 
@@ -134,16 +138,47 @@ export async function listRecentChatMessages(
 export async function markMessageUnanswered(
   messageId: number,
   reason: string,
+  snapshot?: UnansweredContextSnapshot,
   pool: Pool = getPool(),
 ): Promise<void> {
-  await pool.query(
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const res = await client.query<{ id: number }>(
+      `
+        update chat_messages
+        set unanswered_reason = $2
+        where id = $1 and role = 'user' and unanswered_reason is null
+        returning id
+      `,
+      [messageId, reason],
+    );
+    if (res.rowCount && snapshot) {
+      await insertUnansweredContextSnapshot(messageId, snapshot, client);
+    }
+    await client.query("commit");
+  } catch (e) {
+    await client.query("rollback");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getUnansweredUserMessageById(
+  messageId: number,
+  pool: Pool = getPool(),
+): Promise<ChatMessageRow | null> {
+  const res = await pool.query<ChatMessageRow>(
     `
-      update chat_messages
-      set unanswered_reason = $2
-      where id = $1 and role = 'user'
+      select id, chat_id, role, content, telegram_message_id, telegram_user_id,
+        telegram_username, telegram_user_first_name, unanswered_reason, created_at
+      from chat_messages
+      where id = $1 and role = 'user' and unanswered_reason is not null
     `,
-    [messageId, reason],
+    [messageId],
   );
+  return res.rows[0] ?? null;
 }
 
 export async function listUnansweredMessages(

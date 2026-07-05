@@ -8,6 +8,9 @@ import {
   OPENAI_ERROR_MESSAGE,
 } from "@/src/rag/answer";
 import { retrieveContext } from "@/src/rag/retrieve";
+import { buildUnansweredContextSnapshot } from "@/src/rag/unansweredSnapshot";
+import type { RecentMessage } from "@/src/rag/prompts";
+import type { RetrievedChunk } from "@/src/db/knowledgeChunks";
 
 import { getBotUsername } from "./botIdentity";
 import { markdownToTelegramHtml } from "./markdownToTelegramHtml";
@@ -81,6 +84,9 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
   const chunkCount = await countKnowledgeChunks();
   let unansweredReason: string | null = null;
   let replyText: string;
+  let chunks: RetrievedChunk[] = [];
+  let recentMessages: RecentMessage[] = [];
+  let searchPerformed = false;
 
   if (chunkCount === 0) {
     unansweredReason = "no_knowledge_index";
@@ -88,14 +94,15 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
       "База знаний ещё не проиндексирована. Администратор должен выполнить команду индексации (rag:index).";
   } else {
     const recentRows = await listRecentChatMessages(chat.id, chatContextLimit());
-    const recentMessages = recentRows.map((m) => ({
+    recentMessages = recentRows.map((m) => ({
       role: m.role,
       content: m.content,
     }));
 
     try {
       const questionForRag = stripBotMentionFromText(incoming.text, botUsername);
-      const chunks = await retrieveContext(questionForRag);
+      searchPerformed = true;
+      chunks = await retrieveContext(questionForRag);
       const result = await answerQuestion({
         question: questionForRag,
         chunks,
@@ -122,7 +129,12 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
   await sendBotReply(chat.id, incoming.telegramChatId, replyText);
 
   if (unansweredReason) {
-    await markMessageUnanswered(userMessage.id, unansweredReason);
+    const snapshot = buildUnansweredContextSnapshot({
+      searchPerformed,
+      chunks,
+      recentMessages,
+    });
+    await markMessageUnanswered(userMessage.id, unansweredReason, snapshot);
   }
 }
 
