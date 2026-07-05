@@ -74,16 +74,27 @@ export async function insertChatMessage(
 
 export async function listChatMessages(
   chatId: number,
-  opts: { limit?: number; before?: number } = {},
+  opts: { limit?: number; before?: number; after?: number } = {},
   pool: Pool = getPool(),
 ): Promise<ChatMessageRow[]> {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
   const params: unknown[] = [chatId];
   let cursorSql = "";
+  let orderSql = "order by id desc";
+
+  if (opts.before !== undefined && opts.after !== undefined) {
+    throw new Error("listChatMessages: use either before or after, not both");
+  }
+
   if (opts.before !== undefined) {
     params.push(opts.before);
     cursorSql = `and id < $${params.length}`;
+  } else if (opts.after !== undefined) {
+    params.push(opts.after);
+    cursorSql = `and id > $${params.length}`;
+    orderSql = "order by id asc";
   }
+
   params.push(limit);
 
   const res = await pool.query<ChatMessageRow>(
@@ -92,12 +103,13 @@ export async function listChatMessages(
         telegram_username, telegram_user_first_name, unanswered_reason, created_at
       from chat_messages
       where chat_id = $1 ${cursorSql}
-      order by id desc
+      ${orderSql}
       limit $${params.length}
     `,
     params,
   );
-  return res.rows.reverse();
+
+  return opts.after !== undefined ? res.rows : res.rows.reverse();
 }
 
 export async function listRecentChatMessages(

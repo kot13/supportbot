@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isStartCommand } from "@/src/telegram/updates";
+import { isStartCommand, stripBotMentionFromText } from "@/src/telegram/updates";
 
 describe("isStartCommand", () => {
   it("matches /start", () => {
@@ -14,6 +14,11 @@ describe("isStartCommand", () => {
 
   it("matches /start with deep-link payload", () => {
     expect(isStartCommand("/start ref123")).toBe(true);
+  });
+
+  it("matches /start after @mention is stripped (group chats)", () => {
+    const text = stripBotMentionFromText("@inappstorysupportbot /start", "inappstorysupportbot");
+    expect(isStartCommand(text)).toBe(true);
   });
 
   it("does not match other commands or text", () => {

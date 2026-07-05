@@ -5,10 +5,15 @@ import { requireAuth } from "@/src/auth/requireAuth";
 import { listChatMessages } from "@/src/db/chatMessages";
 import { getChatById } from "@/src/db/chats";
 
-const QuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  before: z.coerce.number().int().positive().optional(),
-});
+const QuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).optional(),
+    before: z.coerce.number().int().positive().optional(),
+    after: z.coerce.number().int().positive().optional(),
+  })
+  .refine((q) => !(q.before !== undefined && q.after !== undefined), {
+    message: "Use either before or after, not both",
+  });
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -36,6 +41,7 @@ export async function GET(request: Request, context: RouteContext) {
   const parsed = QuerySchema.safeParse({
     limit: url.searchParams.get("limit") ?? undefined,
     before: url.searchParams.get("before") ?? undefined,
+    after: url.searchParams.get("after") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json(
@@ -48,10 +54,14 @@ export async function GET(request: Request, context: RouteContext) {
   const messages = await listChatMessages(chatId, {
     limit,
     before: parsed.data.before,
+    after: parsed.data.after,
   });
 
   const oldestId = messages[0]?.id;
-  const nextBefore = messages.length >= limit && oldestId !== undefined ? oldestId : undefined;
+  const nextBefore =
+    parsed.data.after === undefined && messages.length >= limit && oldestId !== undefined
+      ? oldestId
+      : undefined;
 
   return NextResponse.json({
     ok: true,

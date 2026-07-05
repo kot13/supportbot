@@ -42,6 +42,8 @@ export default async function ChatDetailPage({ params }: PageProps) {
             Type: {chat.type ?? "—"}
             {" · "}
             Active: {chat.is_active ? "yes" : "no"}
+            {" · "}
+            Messages refresh automatically every few seconds.
           </p>
         </div>
         <Link className="text-sm text-indigo-600 hover:underline" href="/chats">

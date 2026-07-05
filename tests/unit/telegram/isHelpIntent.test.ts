@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isHelpIntent } from "@/src/telegram/updates";
+import { isHelpIntent, stripBotMentionFromText } from "@/src/telegram/updates";
 
 describe("isHelpIntent", () => {
   it("matches /help command", () => {
@@ -13,6 +13,14 @@ describe("isHelpIntent", () => {
     expect(isHelpIntent("что ты умеешь")).toBe(true);
     expect(isHelpIntent("Чем вы можете помочь?")).toBe(true);
     expect(isHelpIntent("какие вопросы вы можете ответить")).toBe(true);
+  });
+
+  it("matches capability questions after @mention is stripped (group chats)", () => {
+    const text = stripBotMentionFromText(
+      "@inappstorysupportbot Что ты умеешь?",
+      "inappstorysupportbot",
+    );
+    expect(isHelpIntent(text)).toBe(true);
   });
 
   it("matches short help phrases", () => {

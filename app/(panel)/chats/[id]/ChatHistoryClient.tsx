@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { chatMessageAnchorId } from "@/src/utils/chatMessageLink";
 import { formatChatDateTime } from "@/src/utils/formatDateTime";
@@ -15,6 +15,12 @@ type MessageRow = {
   telegramUserFirstName?: string | null;
   createdAt: string;
 };
+
+const POLL_MS = 10_000;
+
+function latestMessageId(messages: MessageRow[]): number {
+  return messages.reduce((max, m) => Math.max(max, m.id), 0);
+}
 
 function MessageAuthorLabel({
   message,
@@ -64,6 +70,9 @@ export function ChatHistoryClient({
   const [error, setError] = useState<string | null>(null);
   const [pendingScrollId, setPendingScrollId] = useState<number | null>(null);
   const [highlightMessageId, setHighlightMessageId] = useState<number | null>(null);
+  const [pollError, setPollError] = useState(false);
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   const loadOlder = useCallback(async () => {
     if (!nextBefore || loading) return;
@@ -87,6 +96,49 @@ export function ChatHistoryClient({
       setLoading(false);
     }
   }, [chatId, loading, nextBefore]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const tick = async () => {
+      const after = latestMessageId(messagesRef.current);
+      const url =
+        after > 0
+          ? `/api/chats/${chatId}/messages?after=${after}&limit=50`
+          : `/api/chats/${chatId}/messages?limit=50`;
+
+      try {
+        const res = await fetch(url, { credentials: "include" });
+        const json: unknown = await res.json();
+        if (!res.ok || typeof json !== "object" || json === null || !(json as { ok?: boolean }).ok) {
+          throw new Error("poll failed");
+        }
+        const data = (json as { data: { messages: MessageRow[] } }).data;
+        if (!cancelled) {
+          if (after === 0) {
+            setMessages(data.messages);
+          } else if (data.messages.length > 0) {
+            setMessages((prev) => {
+              const ids = new Set(prev.map((m) => m.id));
+              const incoming = data.messages.filter((m) => !ids.has(m.id));
+              return incoming.length > 0 ? [...prev, ...incoming] : prev;
+            });
+          }
+          setPollError(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setPollError(true);
+        }
+      }
+    };
+
+    const id = window.setInterval(() => void tick(), POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [chatId]);
 
   useEffect(() => {
     const readHash = () => {
@@ -129,6 +181,11 @@ export function ChatHistoryClient({
 
   return (
     <div className="space-y-3">
+      {pollError ? (
+        <p className="text-xs text-amber-800" role="status">
+          Could not refresh messages; showing last known data. Will retry on the next interval.
+        </p>
+      ) : null}
       {nextBefore ? (
         <button
           type="button"

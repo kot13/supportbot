@@ -66,12 +66,14 @@ export async function processIncomingMessage(update: TelegramUpdate): Promise<vo
     telegramUserFirstName: incoming.telegramUserFirstName,
   });
 
-  if (isStartCommand(incoming.text)) {
+  const textForIntent = stripBotMentionFromText(incoming.text, botUsername);
+
+  if (isStartCommand(textForIntent)) {
     await sendBotReply(chat.id, incoming.telegramChatId, START_GREETING);
     return;
   }
 
-  if (isHelpIntent(incoming.text)) {
+  if (isHelpIntent(textForIntent)) {
     await sendBotReply(chat.id, incoming.telegramChatId, HELP_TOPICS_REPLY);
     return;
   }

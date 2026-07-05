@@ -42,5 +42,10 @@ describe.runIf(hasDb)("chat_messages persistence", () => {
     const limited = await listChatMessages(chatId, { limit: 1 });
     expect(limited).toHaveLength(1);
     expect(limited[0]?.role).toBe("bot");
+
+    const userMsgId = page[0]!.id;
+    const newer = await listChatMessages(chatId, { after: userMsgId });
+    expect(newer).toHaveLength(1);
+    expect(newer[0]?.role).toBe("bot");
   });
 });
