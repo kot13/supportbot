@@ -11,6 +11,31 @@ export type TelegramSendResult =
 
 const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
 
+function isInsideFencedCodeBlock(text: string, position: number): boolean {
+  const before = text.slice(0, position);
+  const fences = before.match(/```/g);
+  return fences ? fences.length % 2 === 1 : false;
+}
+
+function adjustCutAwayFromCodeBlock(text: string, cut: number): number {
+  if (!isInsideFencedCodeBlock(text, cut)) return cut;
+
+  const closeFence = text.indexOf("```", cut);
+  if (closeFence !== -1) {
+    return closeFence + 3;
+  }
+
+  const openFence = text.lastIndexOf("```", cut);
+  if (openFence > 0) {
+    let newCut = text.lastIndexOf("\n\n", openFence);
+    if (newCut < 0) newCut = text.lastIndexOf("\n", openFence);
+    if (newCut > 0) return newCut;
+    return openFence;
+  }
+
+  return cut;
+}
+
 export function splitLongTelegramText(text: string, maxLen = TELEGRAM_MAX_MESSAGE_LENGTH): string[] {
   if (text.length <= maxLen) return [text];
   const parts: string[] = [];
@@ -19,6 +44,8 @@ export function splitLongTelegramText(text: string, maxLen = TELEGRAM_MAX_MESSAG
     let cut = rest.lastIndexOf("\n\n", maxLen);
     if (cut < maxLen * 0.5) cut = rest.lastIndexOf("\n", maxLen);
     if (cut < maxLen * 0.5) cut = maxLen;
+    cut = adjustCutAwayFromCodeBlock(rest, cut);
+    if (cut <= 0) cut = maxLen;
     parts.push(rest.slice(0, cut).trimEnd());
     rest = rest.slice(cut).trimStart();
   }
@@ -86,4 +113,3 @@ export async function sendTelegramMessage(input: TelegramSendInput): Promise<Tel
     clearTimeout(timeout);
   }
 }
-

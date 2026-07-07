@@ -36,7 +36,87 @@ export function resolveDocUrl(href: string): string {
   return `${docsBaseUrl()}/${trimmed.replace(/^\//, "")}`;
 }
 
-/** Convert a subset of Markdown (code blocks, links, bold/italic) to Telegram HTML. */
+const FENCED_CODE_TOKEN = "\uE001";
+
+function extractFencedCodeBlocks(text: string): { text: string; blocks: string[] } {
+  const blocks: string[] = [];
+  const withoutCode = text.replace(/```[^\n`]*\n?[\s\S]*?```/g, (match) => {
+    const token = `${FENCED_CODE_TOKEN}${blocks.length}${FENCED_CODE_TOKEN}`;
+    blocks.push(match);
+    return token;
+  });
+  return { text: withoutCode, blocks };
+}
+
+function restoreFencedCodeBlocks(text: string, blocks: string[]): string {
+  return text.replace(
+    new RegExp(`${FENCED_CODE_TOKEN}(\\d+)${FENCED_CODE_TOKEN}`, "g"),
+    (_match, index) => blocks[Number(index)]!,
+  );
+}
+
+function isTableSeparatorLine(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.includes("|") && /^\|?[\s|:-]+$/.test(trimmed) && /-{2,}|:{2,}/.test(trimmed);
+}
+
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|");
+}
+
+function parseTableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function tableRowToListItem(cells: string[]): string {
+  const nonEmpty = cells.filter((c) => c.length > 0);
+  if (nonEmpty.length === 0) return "";
+  if (nonEmpty.length === 1) return `- ${nonEmpty[0]}`;
+  return `- ${nonEmpty.join(" — ")}`;
+}
+
+function sanitizeLine(line: string): string {
+  const headerMatch = line.match(/^#{1,6}\s+(.+)$/);
+  if (headerMatch) {
+    return `**${headerMatch[1]!.trim()}**`;
+  }
+
+  const trimmed = line.trim();
+  if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+    return "";
+  }
+
+  if (/^\[\^[^\]]+\]:/.test(trimmed)) {
+    return "";
+  }
+
+  if (isTableSeparatorLine(line)) {
+    return "";
+  }
+
+  if (isTableRow(line)) {
+    return tableRowToListItem(parseTableCells(line));
+  }
+
+  let result = line.replace(/\[\^[^\]]+\]/g, "");
+  result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, (_match, alt: string) => alt || "");
+  return result;
+}
+
+/** Strip or convert Markdown constructs that Telegram does not render. */
+export function sanitizeMarkdownForTelegram(markdown: string): string {
+  const { text: withoutCode, blocks } = extractFencedCodeBlocks(markdown);
+  const sanitized = withoutCode.split("\n").map(sanitizeLine).join("\n");
+  return restoreFencedCodeBlocks(sanitized, blocks);
+}
+
+/** Convert a subset of Markdown (code blocks, links, bold/italic/strike) to Telegram HTML. */
 export function markdownToTelegramHtml(markdown: string): string {
   const preserved: string[] = [];
   const preserve = (html: string) => {
@@ -67,6 +147,10 @@ export function markdownToTelegramHtml(markdown: string): string {
 
   text = text.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, (_match, inner) =>
     preserve(`<i>${escapeHtml(String(inner))}</i>`),
+  );
+
+  text = text.replace(/~~([^~\n]+)~~/g, (_match, inner) =>
+    preserve(`<s>${escapeHtml(String(inner))}</s>`),
   );
 
   text = escapeHtml(text);

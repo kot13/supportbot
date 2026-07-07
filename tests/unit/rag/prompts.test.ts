@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RetrievedChunk } from "@/src/db/knowledgeChunks";
-import { hasUsableContext, buildUserPrompt } from "@/src/rag/prompts";
+import { hasUsableContext, buildUserPrompt, SYSTEM_PROMPT } from "@/src/rag/prompts";
 
 describe("hasUsableContext", () => {
   it("returns false for empty chunks", () => {
@@ -77,5 +77,21 @@ describe("buildUserPrompt", () => {
     expect(prompt).toContain("Gradle dependency");
     expect(prompt).toContain("Привет");
     expect(prompt).toContain("URL: https://docs.inappstory.ru/sdk-guides/android/how-to-get-started");
+  });
+});
+
+describe("SYSTEM_PROMPT", () => {
+  it("instructs Telegram-compatible formatting and forbids unsupported markup", () => {
+    expect(SYSTEM_PROMPT).toContain("Оформление ответа для Telegram");
+    expect(SYSTEM_PROMPT).toMatch(/таблиц/i);
+    expect(SYSTEM_PROMPT).toMatch(/заголовки с #/i);
+    expect(SYSTEM_PROMPT).not.toContain("Форматируй ответ в Markdown");
+  });
+
+  it("preserves link rules from correct-links feature", () => {
+    expect(SYSTEM_PROMPT).toContain("docs.inappstory.ru");
+    expect(SYSTEM_PROMPT).toContain("console.inappstory.ru");
+    expect(SYSTEM_PROMPT).toContain("api.inappstory.ru");
+    expect(SYSTEM_PROMPT).toContain("resources.csv#");
   });
 });

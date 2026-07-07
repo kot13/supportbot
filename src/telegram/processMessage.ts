@@ -14,7 +14,7 @@ import type { RecentMessage } from "@/src/rag/prompts";
 import type { RetrievedChunk } from "@/src/db/knowledgeChunks";
 
 import { getBotUsername } from "./botIdentity";
-import { markdownToTelegramHtml } from "./markdownToTelegramHtml";
+import { markdownToTelegramHtml, sanitizeMarkdownForTelegram } from "./markdownToTelegramHtml";
 import { sendTelegramMessage, splitLongTelegramText } from "./send";
 import type { TelegramUpdate } from "./updates";
 import { isAddressedToBot, isHelpIntent, isStartCommand, normalizeIncomingMessage, stripBotMentionFromText } from "./updates";
@@ -152,7 +152,8 @@ async function sendBotReply(
   text: string,
   replyToMessageId?: number,
 ): Promise<void> {
-  const parts = splitLongTelegramText(text);
+  const sanitized = sanitizeMarkdownForTelegram(text);
+  const parts = splitLongTelegramText(sanitized);
   let lastTelegramMessageId: number | undefined;
 
   for (const [index, part] of parts.entries()) {
@@ -189,11 +190,11 @@ async function sendBotReply(
     lastTelegramMessageId = sent.telegramMessageId;
   }
 
-  // Persist original Markdown (not Telegram HTML) so /chats history matches what the model produced.
+  // Persist Telegram-compatible Markdown (sanitized, not raw model output or HTML).
   await insertChatMessage({
     chatId: internalChatId,
     role: "bot",
-    content: text,
+    content: sanitized,
     telegramMessageId: lastTelegramMessageId ?? null,
   });
 }

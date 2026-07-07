@@ -31,6 +31,7 @@ Auto-generated from all feature plans. Last updated: 2026-07-07
 - PostgreSQL — расширение `bot_settings` (`answer_model`, `embedding_model`), `knowledge_index_runs.embedding_model`; migration `007`; `vector(1536)` без смены размерности (013-bot-model-settings)
 - TypeScript (Node.js 20+), Next.js 16 App Router + существующие `pg`, `openai`, Telegram Bot API; без новых npm-пакетов (014-correct-links)
 - PostgreSQL — `knowledge_chunks.metadata` (JSONB); `chat_messages.content` (Markdown) (014-correct-links)
+- PostgreSQL — `chat_messages.content` (семантика: санитизированный Markdown для role=bot) (015-telegram-answer-formatting)
 
 - TypeScript (Node.js LTS) + Next.js (App Router), Telegram Bot SDK, ORM/DB client, UI component primitives (001-telegram-broadcast-panel)
 
@@ -50,9 +51,9 @@ npm test && npm run lint
 TypeScript (Node.js LTS): Follow standard conventions
 
 ## Recent Changes
+- 015-telegram-answer-formatting: Added TypeScript (Node.js 20+), Next.js 16 App Router + существующие `pg`, `openai`, Telegram Bot API; без новых npm-пакетов
 - 014-correct-links: Added TypeScript (Node.js 20+), Next.js 16 App Router + существующие `pg`, `openai`, Telegram Bot API; без новых npm-пакетов
 - 013-bot-model-settings: Added TypeScript (Node.js 20+), Next.js 16 App Router + `pg`, `openai`, `zod`, `@heroui/react`, `src/rag/*`, `POST /api/knowledge/reindex`, `GET /api/knowledge/index-status`, bot settings UI
-- 012-broadcast-edit-resend: Added TypeScript (Node.js 20+) + Next.js 16 App Router, React, `@heroui/react` (Modal), `pg`, `zod`, существующие `sendBroadcast`, `POST /api/broadcasts`
 
 
 <!-- MANUAL ADDITIONS START -->
