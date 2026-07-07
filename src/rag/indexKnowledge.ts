@@ -17,6 +17,7 @@ import { hashChunkContent } from "./chunkers/markdown";
 import { chunkMarkdownDocs } from "./chunkers/markdown";
 import { chunkOpenApiYaml } from "./chunkers/openApiYaml";
 import { embedTexts } from "./embed";
+import { buildSourceUrl } from "./sourceUrls";
 
 const BATCH_SIZE = 20;
 
@@ -49,6 +50,12 @@ export async function indexKnowledge(): Promise<IndexKnowledgeResult> {
       for (let j = 0; j < batch.length; j++) {
         const chunk = batch[j]!;
         const embedding = embeddings[j]!;
+        const metadata: Record<string, unknown> = { ...(chunk.metadata ?? {}) };
+        const sourceUrl = buildSourceUrl(chunk.sourceType, chunk.sourcePath, metadata);
+        if (sourceUrl) {
+          metadata.sourceUrl = sourceUrl;
+        }
+
         await upsertKnowledgeChunk({
           sourceType: chunk.sourceType,
           sourcePath: chunk.sourcePath,
@@ -56,7 +63,7 @@ export async function indexKnowledge(): Promise<IndexKnowledgeResult> {
           content: chunk.content,
           contentHash: hashChunkContent(chunk.content),
           embedding,
-          metadata: chunk.metadata ?? null,
+          metadata: Object.keys(metadata).length > 0 ? metadata : null,
         });
       }
     }

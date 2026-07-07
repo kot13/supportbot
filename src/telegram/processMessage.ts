@@ -189,6 +189,7 @@ async function sendBotReply(
     lastTelegramMessageId = sent.telegramMessageId;
   }
 
+  // Persist original Markdown (not Telegram HTML) so /chats history matches what the model produced.
   await insertChatMessage({
     chatId: internalChatId,
     role: "bot",

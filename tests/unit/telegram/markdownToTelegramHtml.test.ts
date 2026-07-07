@@ -3,11 +3,23 @@ import { describe, expect, it } from "vitest";
 import { markdownToTelegramHtml, resolveDocUrl } from "@/src/telegram/markdownToTelegramHtml";
 
 describe("resolveDocUrl", () => {
-  it("resolves relative doc paths against docs.inappstory.com", () => {
+  it("resolves relative doc paths against docs.inappstory.ru", () => {
     expect(resolveDocUrl("/sdk-guides/android/user-settings")).toBe(
-      "https://docs.inappstory.com/sdk-guides/android/user-settings",
+      "https://docs.inappstory.ru/sdk-guides/android/user-settings",
     );
     expect(resolveDocUrl("https://example.com/x")).toBe("https://example.com/x");
+  });
+
+  it("normalizes legacy docs.inappstory.com to .ru", () => {
+    expect(resolveDocUrl("https://docs.inappstory.com/sdk-guides/android/foo")).toBe(
+      "https://docs.inappstory.ru/sdk-guides/android/foo",
+    );
+  });
+
+  it("normalizes legacy console.inappstory.com links", () => {
+    expect(resolveDocUrl("https://console.inappstory.com/console/docs/roles-management")).toBe(
+      "https://console.inappstory.ru/docs/roles-management",
+    );
   });
 });
 
@@ -19,7 +31,7 @@ describe("markdownToTelegramHtml", () => {
 
   it("converts markdown links", () => {
     const html = markdownToTelegramHtml("[Android](/sdk-guides/android/user-settings)");
-    expect(html).toContain('<a href="https://docs.inappstory.com/sdk-guides/android/user-settings">Android</a>');
+    expect(html).toContain('<a href="https://docs.inappstory.ru/sdk-guides/android/user-settings">Android</a>');
   });
 
   it("converts inline code and bold", () => {

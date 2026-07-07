@@ -55,7 +55,7 @@ describe("hasUsableContext", () => {
 });
 
 describe("buildUserPrompt", () => {
-  it("includes question and sources", () => {
+  it("includes question, sources and source URL", () => {
     const prompt = buildUserPrompt({
       question: "Как подключить SDK?",
       chunks: [
@@ -65,7 +65,9 @@ describe("buildUserPrompt", () => {
           sourcePath: "android.md",
           title: "Android",
           content: "Gradle dependency…",
-          metadata: null,
+          metadata: {
+            sourceUrl: "https://docs.inappstory.ru/sdk-guides/android/how-to-get-started",
+          },
           distance: 0.1,
         },
       ],
@@ -74,5 +76,6 @@ describe("buildUserPrompt", () => {
     expect(prompt).toContain("Как подключить SDK?");
     expect(prompt).toContain("Gradle dependency");
     expect(prompt).toContain("Привет");
+    expect(prompt).toContain("URL: https://docs.inappstory.ru/sdk-guides/android/how-to-get-started");
   });
 });

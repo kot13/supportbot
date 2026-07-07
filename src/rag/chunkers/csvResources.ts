@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
 
+import { buildConsoleArticleUrl } from "@/src/rag/sourceUrls";
+
 import type { RawChunk } from "./markdown";
 
 function stripHtml(html: string): string {
@@ -70,6 +72,7 @@ export async function chunkCsvResources(csvPath: string): Promise<RawChunk[]> {
   const idIdx = header.indexOf("id");
   const titleIdx = header.indexOf("title");
   const categoryIdx = header.indexOf("category");
+  const slugIdx = header.indexOf("slug");
   const contentIdx = header.indexOf("content");
 
   const chunks: RawChunk[] = [];
@@ -78,16 +81,22 @@ export async function chunkCsvResources(csvPath: string): Promise<RawChunk[]> {
     const id = idIdx >= 0 ? rec[idIdx] : String(i);
     const title = titleIdx >= 0 ? rec[titleIdx] : null;
     const category = categoryIdx >= 0 ? rec[categoryIdx] : null;
+    const slug = slugIdx >= 0 ? rec[slugIdx]?.trim() || null : null;
     const rawContent = contentIdx >= 0 ? rec[contentIdx] : "";
     const plain = stripHtml(rawContent ?? "");
     if (!plain) continue;
 
     const content = title ? `${title}\n\n${plain}` : plain;
+    const sourceUrl = buildConsoleArticleUrl(slug);
+    const metadata: Record<string, unknown> = { category, id };
+    if (slug) metadata.slug = slug;
+    if (sourceUrl) metadata.sourceUrl = sourceUrl;
+
     chunks.push({
       sourcePath: `resources.csv#${id}`,
       title: title ?? null,
       content,
-      metadata: { category, id },
+      metadata,
     });
   }
 

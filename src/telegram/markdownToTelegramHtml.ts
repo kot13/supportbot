@@ -1,6 +1,6 @@
 function docsBaseUrl(): string {
   const raw = process.env.DOCS_BASE_URL?.trim();
-  return (raw || "https://docs.inappstory.com").replace(/\/$/, "");
+  return (raw || "https://docs.inappstory.ru").replace(/\/$/, "");
 }
 
 function escapeHtml(text: string): string {
@@ -11,9 +11,27 @@ function escapeHtmlAttr(text: string): string {
   return escapeHtml(text).replace(/"/g, "&quot;");
 }
 
+function normalizeLegacyUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "docs.inappstory.com") {
+      parsed.hostname = "docs.inappstory.ru";
+      return parsed.toString().replace(/\/$/, "");
+    }
+    if (parsed.hostname === "console.inappstory.com") {
+      parsed.hostname = "console.inappstory.ru";
+      parsed.pathname = parsed.pathname.replace(/^\/console\/docs\//, "/docs/");
+      return parsed.toString();
+    }
+    return url;
+  } catch {
+    return url;
+  }
+}
+
 export function resolveDocUrl(href: string): string {
   const trimmed = href.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return normalizeLegacyUrl(trimmed);
   if (trimmed.startsWith("/")) return `${docsBaseUrl()}${trimmed}`;
   return `${docsBaseUrl()}/${trimmed.replace(/^\//, "")}`;
 }
